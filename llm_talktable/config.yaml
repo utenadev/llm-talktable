@@ -1,0 +1,14 @@
+# LLM TalkTable 設定ファイル例
+
+# 会話するテーマ (コマンドライン引数でも指定可)
+topic: "人工知能の未来と社会への影響について"
+
+# 会話参加者設定
+participants:
+  - name: "アリス" # 参加者Aの名前
+    model: "gpt-4o-mini" # 使用するLLMモデルID (llmが認識できるもの)
+    persona: "あなたは好奇心旺盛で楽観的なAI研究者です。" # LLMに与える役割/口調
+
+  - name: "ボブ" # 参加者Bの名前
+    model: "claude-3-5-sonnet" # 使用するLLMモデルID
+    persona: "あなたは慎重で哲学的なAI倫理学者です。" # LLMに与える役割/口調
