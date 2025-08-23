@@ -17,7 +17,6 @@ PythonベースのLLM会話アプリケーションです。`simonw/llm`ライ�
 ### アプリケーション構造
 
 ```
-llm_talktable/
 ├── main.py              # アプリケーションのエントリーポイント
 ├── config.py            # 設定管理（モデル名、DBパス等）
 ├── conversation.py      # 会話ロジック（LLM呼び出し、ターン管理）

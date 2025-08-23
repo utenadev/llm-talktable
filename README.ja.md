@@ -14,7 +14,6 @@
 ## ディレクトリ構造
 
 ```
-llm_talktable/
 ├── main.py              # アプリケーションのエントリーポイント
 ├── config.py            # 設定管理（モデル名、DBパス等）
 ├── conversation.py      # 会話ロジック（LLM呼び出し、ターン管理）
@@ -30,8 +29,8 @@ llm_talktable/
 ### 1. 依存関係のインストール
 
 ```bash
-# プロジェクトディレクトリに移動
-cd llm_talktable
+# プロジェクトディレクトリに移動 (既にルートにあるため不要かもしれません)
+# cd llm-talktable
 
 # 必要なライブラリをインストール
 pip install -r requirements.txt
