@@ -1,5 +1,6 @@
 import argparse
 import os
+from typing import List
 
 # Use yaml_include for !include tag support
 import yaml
@@ -35,7 +36,7 @@ class ParticipantConfig:
 class AppConfig:
     """アプリケーション全体の設定を保持するクラス"""
 
-    def __init__(self, topic: str, participants: list[ParticipantConfig], max_turns: int = 10, show_prompt: bool = False):
+    def __init__(self, topic: str, participants: List[ParticipantConfig], max_turns: int = 10, show_prompt: bool = False):
         self.topic = topic
         self.participants = participants
         self.max_turns = max_turns

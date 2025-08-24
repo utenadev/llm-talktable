@@ -74,3 +74,21 @@
   - README.ja.md の更新
   - サンプル設定ファイル、実行スクリプトの追加
   - _要件: 全要件の最終検証_
+
+- [ ] 8. コードレビュー対応 (優先度順)
+  - [ ] 8.1. ログ機能の統一化
+    - `logger.py`: `logging` モジュールを使用したロガーと色付きフォーマッターを実装
+    - `conversation.py`, `main.py` など: `print()` を `logger` に置き換える
+  - [ ] 8.2. 型ヒントの完全化
+    - `config.py`, `conversation.py`, `database.py` に不足している型ヒントを追加・修正
+  - [ ] 8.3. 設定バリデーションの強化
+    - `config.py`: 設定読み込み時に、必須項目、型、値の範囲などを検証するロジックを追加
+  - [ ] 8.4. 例外処理の整理
+    - `conversation.py`, `main.py`: `KeyboardInterrupt` やその他の例外処理を見直し、一貫性を持たせる
+  - [ ] 8.5. データベース接続の最適化
+    - `database.py`: データベース接続を管理するコンテキストマネージャーを導入
+  - [ ] 8.6. テスタビリティの向上
+    - `llm_interface.py`: LLM用の抽象インターフェースとアダプタークラスを実装
+    - `conversation.py`: `LLMInterface` を使用するようにリファクタリング
+  - [ ] 8.7. 設定の外部化
+    - `config.py`: `AppConfig` に追加の設定項目を定義し、`config.yaml` から読み込めるようにする

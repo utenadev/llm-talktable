@@ -4,6 +4,7 @@ from config import AppConfig, ParticipantConfig
 from database import log_conversation_turn, log_conversation_meta
 import time
 import sys
+from typing import Optional, List
 
 # colorama for colored console output
 from colorama import init as colorama_init, Fore, Style
@@ -12,6 +13,10 @@ colorama_init() # Initialize colorama
 # yaspin for waiting indicator (spinner)
 from yaspin import yaspin
 from yaspin.spinners import Spinners
+
+# logging
+from logger import setup_logger
+logger = setup_logger(__name__)
 
 
 class ConversationManager:
@@ -52,7 +57,7 @@ class ConversationManager:
         self,
         speaker: ParticipantConfig,
         prompt_text: str,
-        context_fragments: list[str] = None,
+        context_fragments: Optional[List[str]] = None,
         show_prompt: bool = False, # 新しい引数
     ) -> str:
         """1人のLLMにプロンプトを送信し、レスポンスを取得する"""
@@ -63,10 +68,10 @@ class ConversationManager:
         system_fragments = [speaker.persona] if speaker.persona else []
         fragments = context_fragments if context_fragments else []
 
-        print(f"\n--- {speaker.name} ({speaker.model}) の発言 ---")
+        logger.info(f"{speaker.name} ({speaker.model}) の発言開始")
         # show_prompt が True の場合のみプロンプトを表示
         if show_prompt:
-            print(f"プロンプト: {prompt_text}")
+            logger.debug(f"プロンプト: {prompt_text}")
 
         try:
             # show_prompt が True の場合のみ "レスポンス:" ラベルを表示
@@ -91,12 +96,12 @@ class ConversationManager:
                 except KeyboardInterrupt:
                     # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
                     spinner.stop()
-                    print("\n[LLM呼び出しが中断されました]")
+                    logger.info("LLM呼び出しが中断されました")
                     raise # KeyboardInterruptを呼び出し元に伝播
 
             # レスポンステキストを色付きで表示
             self._print_colored_response(speaker.name, response_text)
-            print("\n") # レスポンス表示後に改行
+            print("\n") # レスポンステキスト表示後に改行
             print("-" * 20)
 
             # データベースに記録
@@ -114,12 +119,12 @@ class ConversationManager:
             # このメソッドで直接KeyboardInterruptをキャッチした場合も、再送出
             # (二重キャッチを防ぐため、上のtryブロックでキャッチしたら上のブロックが優先されるべき)
             # ただし、念のためここでもキャッチし、再送出する。
-            print("\n[_run_single_turn内でKeyboardInterruptをキャッチ]")
+            logger.info("_run_single_turn内でKeyboardInterruptをキャッチ")
             raise
         except Exception as e:
             # その他のエラー処理
             error_msg = f"LLM '{speaker.name}' の呼び出しに失敗しました: {e}"
-            print(f"エラー: {error_msg}")
+            logger.error(error_msg)
             # エラーもログに記録
             log_conversation_turn(
                 conversation_id=self.conversation_id,
@@ -129,7 +134,7 @@ class ConversationManager:
                 prompt=prompt_text,
                 response=f"[エラー] {error_msg}",
             )
-            raise # 例外を再送出して、呼び出し元で処理
+            raise RuntimeError(error_msg) from e # 例外をラップして再送出
 
     def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
         """会話を開始する"""
@@ -139,7 +144,7 @@ class ConversationManager:
         participant_a = self.config.participants[0]
         participant_b = self.config.participants[1]
 
-        print(f"会話セッション開始 (ID: {self.conversation_id})")
+        logger.info(f"会話セッション開始 (ID: {self.conversation_id})")
         print(f"テーマ: {self.config.topic}")
         print(f"参加者A: {participant_a.name} ({participant_a.model})")
         print(f"参加者B: {participant_b.name} ({participant_b.model})")
@@ -167,7 +172,7 @@ class ConversationManager:
 
         for turn in range(max_turns):
             self.turn_count = turn + 1
-            print(f"\n[ターン {self.turn_count}]")
+            logger.info(f"[ターン {self.turn_count}] 開始")
 
             # --- インタラプト処理の追加 ---
             conversation_continues = True
@@ -207,6 +212,7 @@ class ConversationManager:
             # 少し待機してAPIレート制限を考慮 (必要に応じて調整)
             time.sleep(1)
 
+        logger.info(f"会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
         print(f"\n会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
 
 

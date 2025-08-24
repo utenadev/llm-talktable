@@ -7,6 +7,10 @@ from config import get_app_config
 from database import init_db
 from conversation import ConversationManager
 
+# logging
+from logger import setup_logger
+logger = setup_logger(__name__)
+
 
 def main():
     """アプリケーションのメインエントリーポイント"""
@@ -16,7 +20,7 @@ def main():
 
         # 2. データベースを初期化
         init_db(app_config.db_path)
-        print(f"データベースを初期化しました: {app_config.db_path}")
+        logger.info(f"データベースを初期化しました: {app_config.db_path}")
 
         # 3. 会話マネージャーを作成し、会話を開始
         conversation_manager = ConversationManager(app_config)
@@ -24,9 +28,10 @@ def main():
 
     except KeyboardInterrupt:
         # KeyboardInterruptを再送出し、conversation.pyのロジックに処理を委ねる
+        logger.info("アプリケーションがユーザーにより中断されました。")
         raise
     except Exception as e:
-        print(f"アプリケーション実行中にエラーが発生しました: {e}")
+        logger.error(f"アプリケーション実行中にエラーが発生しました: {e}")
         sys.exit(1)
 
 
