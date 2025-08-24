@@ -23,7 +23,11 @@
     - Integrated `yaml_include` package to enable `!include` tags in `config.yaml`.
     - This allows storing participant personas in separate files (e.g., `personas/alice_persona.txt`) for better organization.
     - Persona files were converted to valid YAML format (using literal block scalars `|`) to be compatible with `yaml_include`.
-    - Git commits: `3807fad`, `e4ce1c6`, `bfca057`, `064f93a`, `77c8773`
+    - Git commits: `37ed21c`, `d127dc2`, `395254d`, `4d6495d`, `8b0490d`, `c56e77f`, `d363f10`, `2adc928`, `3807fad`, `e4ce1c6`, `bfca057`, `064f93a`, `77c8773`
+- **Spinner Pattern Customized**:
+    - Changed the visual indicator for LLM processing time from `Spinners.clock` to `Spinners.bouncingBall`.
+    - Added magenta color to the spinner for better visibility.
+    - Git commit: (to be added after staging and committing)
 - **Git Commits**:
     - `e80088a`: Initial commit adding the project structure and core files.
     - `9dccb38`: Refactor project structure to repository root.
@@ -40,6 +44,7 @@
     - `bfca057`: Fix yaml_include usage to use IncludeLoader.
     - `064f93a`: Correctly initialize yaml_include for !include tag support.
     - `77c8773`: Convert persona files to YAML format for yaml_include compatibility.
+    - `24c9274`: Update Serena memory with yaml_include feature implementation details.
 - **Development Workflow Note**:
     - As of 2025-08-24, the development process has been clarified: **All features must be tested and confirmed working on their respective feature branches *before* merging into `main`**. This ensures code quality and prevents integration issues.
 - **Next Steps**:

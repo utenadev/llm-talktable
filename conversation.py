@@ -78,7 +78,8 @@ class ConversationManager:
 
             # LLM呼び出し中にスピナーを表示
             response_text = "" # 例外発生時に空文字を返すため事前に定義
-            with yaspin(Spinners.clock, text=f"{speaker.name} is thinking...") as spinner:
+            with yaspin(Spinners.bouncingBall, color="magenta",
+                        text=f"{speaker.name} is thinking...") as spinner:
                 try:
                     response = model.prompt(
                         prompt_text,
