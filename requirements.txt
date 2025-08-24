@@ -2,3 +2,4 @@ llm
 PyYAML
 colorama
 yaspin
+pyyaml-include
