@@ -31,10 +31,10 @@ class ConversationManager:
 
     def _print_colored_response(self, speaker_name: str, response_text: str):
         """話者名に応じて色を付けたレスポンステキストを表示する"""
-        # 話者ごとの色を定義
+        # 話者ごとの色を定義 (config.yaml から読み込むように拡張可能)
         speaker_colors = {
-            self.config.participants[0].name: Fore.CYAN,  # 参加者A: 水色
-            self.config.participants[1].name: Fore.MAGENTA,  # 参加者B: マゼンタ
+            self.config.participants[0].name: Fore.CYAN,    # 参加者A: 水色
+            self.config.participants[1].name: Fore.MAGENTA, # 参加者B: マゼンタ
             # MCが実装された場合はここに追加
             # "MC": Fore.YELLOW,
         }
@@ -49,6 +49,7 @@ class ConversationManager:
         speaker: ParticipantConfig,
         prompt_text: str,
         context_fragments: list[str] = None,
+        show_prompt: bool = False, # 新しい引数
     ) -> str:
         """1人のLLMにプロンプトを送信し、レスポンスを取得する"""
         model = self._get_llm_model(speaker)
@@ -59,7 +60,9 @@ class ConversationManager:
         fragments = context_fragments if context_fragments else []
 
         print(f"\n--- {speaker.name} ({speaker.model}) の発言 ---")
-        print(f"プロンプト: {prompt_text}")
+        # show_prompt が True の場合のみプロンプトを表示
+        if show_prompt:
+            print(f"プロンプト: {prompt_text}")
 
         try:
             response = model.prompt(
@@ -69,22 +72,29 @@ class ConversationManager:
                 stream=True  # ストリーミングを有効にする (llmライブラリが対応していれば)
             )
 
-            print("レスポンス:")
+            # show_prompt が True の場合のみ "レスポンス:" ラベルを表示
+            if show_prompt:
+                print("レスポンス:")
+            else:
+                # プロンプト非表示時は、レスポンス本文の前に何も表示しない
+                pass
+
             response_text = ""
-            # ストリームからテキストを逐次取得して表示
+            # ストリームからテキストを逐次取得して蓄積 (表示はしない)
             for chunk in response:
                 # chunk が文字列であることを期待 (llmライブラリの仕様に依存)
                 if isinstance(chunk, str):
-                    print(chunk, end='', flush=True) # 即時表示
                     response_text += chunk
                 else:
                     # chunk が他のオブジェクトの場合 (例: OpenAIのChatCompletionChunk)
                     # この場合、chunk.choices[0].delta.content などからテキストを取得する必要がある
                     # ここでは簡略化のため、str(chunk) を使用
                     chunk_str = str(chunk)
-                    print(chunk_str, end='', flush=True)
                     response_text += chunk_str
-            print("\n") # ストリーム終了後に改行
+
+            # 蓄積されたレスポンステキストを色付きで表示
+            self._print_colored_response(speaker.name, response_text)
+            print("\n") # レスポンス表示後に改行
             print("-" * 20)
 
             # データベースに記録
@@ -112,7 +122,7 @@ class ConversationManager:
             )
             raise
 
-    def start_conversation(self, max_turns: int = 10):
+    def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
         """会話を開始する"""
         if len(self.config.participants) < 2:
             raise ValueError("会話には少なくとも2人の参加者が必要です。")
@@ -125,6 +135,10 @@ class ConversationManager:
         print(f"参加者A: {participant_a.name} ({participant_a.model})")
         print(f"参加者B: {participant_b.name} ({participant_b.model})")
         print(f"最大ターン数: {max_turns}")
+        if show_prompt:
+            print("プロンプト表示: ON")
+        else:
+            print("プロンプト表示: OFF")
         print("-" * 40)
 
         # 会話メタデータをデータベースに記録
@@ -151,6 +165,7 @@ class ConversationManager:
                 response_text = self._run_single_turn(
                     speaker=current_speaker,
                     prompt_text=current_prompt,
+                    show_prompt=show_prompt, # 引数を渡す
                 )
 
                 # 次のターンの準備: レスポンスを次のプロンプトにする

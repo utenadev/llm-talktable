@@ -28,6 +28,17 @@
   - _要件: 2.1, 2.2, 2.3_
   - 修正・新規追加ファイル: `config.py`, `conversation.py`, `requirements.txt`, `config.yaml`
 
+- [ ] 2.1.1. 表示オプションの追加と色付き出力の修正
+  - `config.yaml`: `show_prompt` 設定項目を追加（デフォルト: false）
+  - `config.py`: `show_prompt` 設定を読み込む機能を追加
+  - `conversation.py`: `show_prompt` 設定に応じてプロンプトの表示/非表示を切り替える
+  - `conversation.py`: プロンプト非表示時、『レスポンス:』のラベルも非表示にする
+  - `conversation.py`: 参加者のレスポンステキストが正しく色付きで表示されるように修正
+  - `main.py`: `show_prompt` 設定を `ConversationManager` に渡す
+  - コマンドラインオプション: `--show-prompt` を追加
+  - _要件: 2.1, 2.2, 2.3 の補足_
+  - 修正・新規追加ファイル: `config.yaml`, `config.py`, `conversation.py`, `main.py`
+
 - [ ] 3. モデレーター(MC)機能の実装
   - `config.py`: MCの設定を読み込む機能を追加
   - `database.py`: MC発言を識別するためのフラグをログテーブルに追加

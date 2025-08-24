@@ -21,10 +21,11 @@ class ParticipantConfig:
 class AppConfig:
     """アプリケーション全体の設定を保持するクラス"""
 
-    def __init__(self, topic: str, participants: list[ParticipantConfig], max_turns: int = 10):
+    def __init__(self, topic: str, participants: list[ParticipantConfig], max_turns: int = 10, show_prompt: bool = False):
         self.topic = topic
         self.participants = participants
         self.max_turns = max_turns
+        self.show_prompt = show_prompt
         self.db_path = DB_PATH
 
 
@@ -39,6 +40,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     topic = config_data.get("topic")
     participants_data = config_data.get("participants", [])
     max_turns = config_data.get("max_turns", 10) # デフォルト値は10
+    show_prompt = config_data.get("show_prompt", False) # デフォルト値はFalse
 
     if not topic:
         raise ValueError("設定ファイルに 'topic' が指定されていません。")
@@ -50,7 +52,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
         for p in participants_data
     ]
 
-    return AppConfig(topic, participants, max_turns)
+    return AppConfig(topic, participants, max_turns, show_prompt)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -67,6 +69,11 @@ def parse_arguments() -> argparse.Namespace:
         "--topic", "-t",
         help="会話のテーマ (設定ファイルの値を上書き)"
     )
+    parser.add_argument(
+        "--show-prompt", "-p",
+        action="store_true",
+        help="プロンプトをコンソールに出力する"
+    )
     # 今後、データベースパスなどのオプションを追加できます
     return parser.parse_args()
 
@@ -79,5 +86,8 @@ def get_app_config() -> AppConfig:
     # コマンドライン引数でテーマが指定されていれば上書き
     if args.topic:
         config.topic = args.topic
+    # コマンドライン引数でshow_promptが指定されていれば上書き
+    if args.show_prompt:
+        config.show_prompt = args.show_prompt
 
     return config

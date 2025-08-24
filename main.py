@@ -20,7 +20,7 @@ def main():
 
         # 3. 会話マネージャーを作成し、会話を開始
         conversation_manager = ConversationManager(app_config)
-        conversation_manager.start_conversation(max_turns=app_config.max_turns)
+        conversation_manager.start_conversation(max_turns=app_config.max_turns, show_prompt=app_config.show_prompt)
 
     except KeyboardInterrupt:
         print("\nユーザーによって操作が中断されました。")
