@@ -1,6 +1,7 @@
 import argparse
 import os
-from typing import List
+from typing import List, Dict, Any
+
 
 # Use yaml_include for !include tag support
 import yaml
@@ -44,6 +45,50 @@ class AppConfig:
         self.db_path = DB_PATH
 
 
+def _validate_participant(p: Dict[str, Any], index: int) -> None:
+    """参加者設定のバリデーション"""
+    required_fields = ["name", "model", "persona"]
+    for field in required_fields:
+        if field not in p:
+            raise ValueError(f"参加者 {index+1} の設定に '{field}' が不足しています。")
+        if not isinstance(p[field], str):
+            raise ValueError(f"参加者 {index+1} の '{field}' は文字列である必要があります: {p[field]}")
+        if not p[field].strip():
+            raise ValueError(f"参加者 {index+1} の '{field}' は空文字列にできません")
+
+
+def _validate_config_data(config_data: Dict[str, Any]) -> None:
+    """設定データ全体のバリデーション"""
+    # topic のバリデーション
+    if not config_data.get("topic"):
+        raise ValueError("設定ファイルに 'topic' が指定されていません。")
+    if not isinstance(config_data["topic"], str):
+        raise ValueError("'topic' は文字列である必要があります。")
+    if not config_data["topic"].strip():
+        raise ValueError("'topic' は空文字列にできません")
+
+    # participants のバリデーション
+    participants_data = config_data.get("participants", [])
+    if len(participants_data) < 2:
+        raise ValueError("設定ファイルには少なくとも2人の 'participants' が必要です。")
+    
+    for i, p in enumerate(participants_data):
+        try:
+            _validate_participant(p, i)
+        except ValueError as e:
+            raise ValueError(f"参加者 {i+1} の設定エラー: {e}") from e
+
+    # max_turns のバリデーション
+    max_turns = config_data.get("max_turns", 10)
+    if not isinstance(max_turns, int) or max_turns <= 0:
+        raise ValueError(f"'max_turns' は正の整数である必要があります: {max_turns}")
+    
+    # show_prompt のバリデーション (オプション)
+    show_prompt = config_data.get("show_prompt", False)
+    if not isinstance(show_prompt, bool):
+        raise ValueError(f"'show_prompt' は真偽値 (true/false) である必要があります: {show_prompt}")
+
+
 def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     """YAML設定ファイルから設定を読み込む"""
     if not os.path.exists(config_path):
@@ -53,15 +98,13 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     with open(config_path, 'r', encoding='utf-8') as file:
         config_data = yaml.load(file, Loader=yaml.FullLoader)
 
-    topic = config_data.get("topic")
-    participants_data = config_data.get("participants", [])
+    # 設定データのバリデーション
+    _validate_config_data(config_data)
+
+    topic = config_data["topic"]
+    participants_data = config_data["participants"]
     max_turns = config_data.get("max_turns", 10) # デフォルト値は10
     show_prompt = config_data.get("show_prompt", False) # デフォルト値はFalse
-
-    if not topic:
-        raise ValueError("設定ファイルに 'topic' が指定されていません。")
-    if len(participants_data) < 2:
-        raise ValueError("設定ファイルには少なくとも2人の 'participants' が必要です。")
 
     participants = [
         ParticipantConfig(p["name"], p["model"], p["persona"])
