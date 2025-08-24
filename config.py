@@ -1,13 +1,13 @@
 import argparse
 import os
 
-# Use pyyaml-include for !include tag support
-import pyyaml_include
+# Use yaml_include for !include tag support
+import yaml_include # <- pyyaml_include から yaml_include に変更
 import yaml
 
-# Initialize pyyaml_include to enable !include in YAML files
+# Initialize yaml_include to enable !include in YAML files
 # This must be called before loading any YAML files that use !include
-pyyaml_include.add_constructor() # <- 有効化
+yaml_include.add_constructor() # <- pyyaml_include.add_constructor() から変更
 
 
 CONFIG_FILE_PATH = "config.yaml"
@@ -42,9 +42,9 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"設定ファイルが見つかりません: {config_path}")
 
-    # Use pyyaml_include.load to support !include tag
+    # Use yaml_include.load to support !include tag
     with open(config_path, 'r', encoding='utf-8') as file:
-        config_data = pyyaml_include.load(file) # <- yaml.safe_load から変更
+        config_data = yaml_include.load(file) # <- pyyaml_include.load から変更
 
     topic = config_data.get("topic")
     participants_data = config_data.get("participants", [])
