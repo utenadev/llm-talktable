@@ -1,5 +1,7 @@
 import sqlite3
 import os
+from contextlib import contextmanager
+from typing import Generator
 from config import DB_PATH
 
 # 会話ログテーブル作成SQL
@@ -30,19 +32,29 @@ CREATE TABLE IF NOT EXISTS conversation_meta (
 """
 
 
-def init_db(db_path: str = DB_PATH):
-    """データベースとテーブルを初期化する"""
+@contextmanager
+def get_db_connection(db_path: str = DB_PATH) -> Generator[sqlite3.Connection, None, None]:
+    """データベース接続のコンテキストマネージャー"""
     # データベースファイルのディレクトリが存在しない場合は作成
     os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
+    
     conn = sqlite3.connect(db_path)
     try:
+        yield conn
+        conn.commit()
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
+
+
+def init_db(db_path: str = DB_PATH):
+    """データベースとテーブルを初期化する"""
+    with get_db_connection(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(CREATE_CONVERSATION_LOG_TABLE_SQL)
         cursor.execute(CREATE_CONVERSATION_META_TABLE_SQL)
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def log_conversation_turn(
@@ -55,8 +67,7 @@ def log_conversation_turn(
     db_path: str = DB_PATH,
 ):
     """1ターン分の会話をデータベースに記録する"""
-    conn = sqlite3.connect(db_path)
-    try:
+    with get_db_connection(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
@@ -66,9 +77,6 @@ def log_conversation_turn(
             """,
             (conversation_id, turn_number, speaker_name, model_used, prompt, response),
         )
-        conn.commit()
-    finally:
-        conn.close()
 
 
 def log_conversation_meta(
@@ -81,8 +89,7 @@ def log_conversation_meta(
     db_path: str = DB_PATH,
 ):
     """会話セッションのメタデータをデータベースに記録する"""
-    conn = sqlite3.connect(db_path)
-    try:
+    with get_db_connection(db_path) as conn:
         cursor = conn.cursor()
         cursor.execute(
             """
@@ -100,6 +107,3 @@ def log_conversation_meta(
                 participant_b_model,
             ),
         )
-        conn.commit()
-    finally:
-        conn.close()
