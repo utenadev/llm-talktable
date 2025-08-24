@@ -19,6 +19,15 @@
   - _要件: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4_
   - 修正・新規追加ファイル: `main.py`, `config.py`, `conversation.py`, `database.py`, `requirements.txt`, `config.yaml`, `README.ja.md`, `LICENSE`
 
+- [ ] 2.1. チャット表示機能の強化
+  - `config.py`: `max_turns` を `config.yaml` から読み込む機能を追加
+  - `conversation.py`: レスポンステキストのコンソール出力に色を付ける機能を実装
+  - `conversation.py`: レスポンステキストのストリーム表示（タイプライター効果）機能を実装（`llm` ライブラリのストリーミングサポートに依存）
+  - `requirements.txt`: `colorama` などの必要なライブラリを追加
+  - `config.yaml`: `max_turns` の設定項目を追加
+  - _要件: 2.1, 2.2, 2.3_
+  - 修正・新規追加ファイル: `config.py`, `conversation.py`, `requirements.txt`, `config.yaml`
+
 - [ ] 3. モデレーター(MC)機能の実装
   - `config.py`: MCの設定を読み込む機能を追加
   - `database.py`: MC発言を識別するためのフラグをログテーブルに追加

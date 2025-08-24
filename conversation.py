@@ -3,6 +3,11 @@ import uuid
 from config import AppConfig, ParticipantConfig
 from database import log_conversation_turn, log_conversation_meta
 import time
+import sys
+
+# colorama for colored console output
+from colorama import init as colorama_init, Fore, Style
+colorama_init() # Initialize colorama
 
 
 class ConversationManager:
@@ -23,6 +28,21 @@ class ConversationManager:
             raise ValueError(
                 f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}"
             ) from e
+
+    def _print_colored_response(self, speaker_name: str, response_text: str):
+        """話者名に応じて色を付けたレスポンステキストを表示する"""
+        # 話者ごとの色を定義
+        speaker_colors = {
+            self.config.participants[0].name: Fore.CYAN,  # 参加者A: 水色
+            self.config.participants[1].name: Fore.MAGENTA,  # 参加者B: マゼンタ
+            # MCが実装された場合はここに追加
+            # "MC": Fore.YELLOW,
+        }
+        # デフォルト色
+        default_color = Fore.WHITE
+
+        color = speaker_colors.get(speaker_name, default_color)
+        print(f"{color}{response_text}{Style.RESET_ALL}")
 
     def _run_single_turn(
         self,
@@ -46,10 +66,25 @@ class ConversationManager:
                 prompt_text,
                 system_fragments=system_fragments,
                 fragments=fragments,
+                stream=True  # ストリーミングを有効にする (llmライブラリが対応していれば)
             )
-            response_text = response.text()
 
-            print(f"レスポンス:\n{response_text}\n")
+            print("レスポンス:")
+            response_text = ""
+            # ストリームからテキストを逐次取得して表示
+            for chunk in response:
+                # chunk が文字列であることを期待 (llmライブラリの仕様に依存)
+                if isinstance(chunk, str):
+                    print(chunk, end='', flush=True) # 即時表示
+                    response_text += chunk
+                else:
+                    # chunk が他のオブジェクトの場合 (例: OpenAIのChatCompletionChunk)
+                    # この場合、chunk.choices[0].delta.content などからテキストを取得する必要がある
+                    # ここでは簡略化のため、str(chunk) を使用
+                    chunk_str = str(chunk)
+                    print(chunk_str, end='', flush=True)
+                    response_text += chunk_str
+            print("\n") # ストリーム終了後に改行
             print("-" * 20)
 
             # データベースに記録
@@ -59,7 +94,7 @@ class ConversationManager:
                 speaker_name=speaker.name,
                 model_used=speaker.model,
                 prompt=prompt_text,
-                response=response_text,
+                response=response_text, # ストリームから構成された完全なテキスト
             )
 
             return response_text
@@ -89,6 +124,7 @@ class ConversationManager:
         print(f"テーマ: {self.config.topic}")
         print(f"参加者A: {participant_a.name} ({participant_a.model})")
         print(f"参加者B: {participant_b.name} ({participant_b.model})")
+        print(f"最大ターン数: {max_turns}")
         print("-" * 40)
 
         # 会話メタデータをデータベースに記録

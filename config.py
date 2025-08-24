@@ -21,9 +21,10 @@ class ParticipantConfig:
 class AppConfig:
     """アプリケーション全体の設定を保持するクラス"""
 
-    def __init__(self, topic: str, participants: list[ParticipantConfig]):
+    def __init__(self, topic: str, participants: list[ParticipantConfig], max_turns: int = 10):
         self.topic = topic
         self.participants = participants
+        self.max_turns = max_turns
         self.db_path = DB_PATH
 
 
@@ -37,6 +38,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
 
     topic = config_data.get("topic")
     participants_data = config_data.get("participants", [])
+    max_turns = config_data.get("max_turns", 10) # デフォルト値は10
 
     if not topic:
         raise ValueError("設定ファイルに 'topic' が指定されていません。")
@@ -48,7 +50,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
         for p in participants_data
     ]
 
-    return AppConfig(topic, participants)
+    return AppConfig(topic, participants, max_turns)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -65,7 +67,7 @@ def parse_arguments() -> argparse.Namespace:
         "--topic", "-t",
         help="会話のテーマ (設定ファイルの値を上書き)"
     )
-    # 今後、データベースパスや最大ターン数などのオプションを追加できます
+    # 今後、データベースパスなどのオプションを追加できます
     return parser.parse_args()
 
 

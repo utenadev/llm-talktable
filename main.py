@@ -20,8 +20,7 @@ def main():
 
         # 3. 会話マネージャーを作成し、会話を開始
         conversation_manager = ConversationManager(app_config)
-        # TODO: 最大ターン数を設定ファイルや引数から指定できるようにする
-        conversation_manager.start_conversation(max_turns=10)
+        conversation_manager.start_conversation(max_turns=app_config.max_turns)
 
     except KeyboardInterrupt:
         print("\nユーザーによって操作が中断されました。")
