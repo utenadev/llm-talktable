@@ -16,6 +16,11 @@ Confirm the diff of updated memory files.
 ## 設計・実装
 README.md, README.ja.md は最新の実装が反映されてないケースあり。
 
+## 開発フロー
+- 機能開発は `feature/xxx` のようなブランチで行う。
+- **各ブランチでの開発完了後、マージ前にそのブランチで動作確認を行うこと。**
+- 動作確認が取れれば、`main` ブランチにマージする。
+
 ## Task
 TASK_FILE=@my/3task.md 
 - {{ TASK_FILE }} を読んで章単位で対応していくこと。

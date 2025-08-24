@@ -12,15 +12,16 @@
     - Implemented colored console output for participant responses using `colorama`.
     - Added CLI option `--show-prompt` to override config file setting.
     - Conditional display of prompts and "Response:" labels based on `show_prompt` setting.
-    - Streaming display (type-writer effect) was implemented but is currently paused to correctly apply text colors.
-    - Git commits: `37ed21c`, `d127dc2`, `395254d`
+    - Replaced streaming display (type-writer effect) with a visual spinner (`yaspin`) to indicate LLM processing time.
+    - Git commits: `37ed21c`, `d127dc2`, `395254d`, `4d6495d`
 - **Git Commits**:
     - `e80088a`: Initial commit adding the project structure and core files.
     - `9dccb38`: Refactor project structure to repository root.
     - `37ed21c`: Enhance chat display features (streaming, colors, config).
     - `d127dc2`: Update .gitignore.
     - `395254d`: Add display options and fix colored output.
+    - `4d6495d`: Add waiting indicator (spinner) using yaspin.
+- **Development Workflow Note**:
+    - As of 2025-08-24, the development process has been clarified: **All features must be tested and confirmed working on their respective feature branches *before* merging into `main`**. This ensures code quality and prevents integration issues.
 - **Next Steps**:
-    - Test the application with the new features.
-    - Consider re-implementing streaming output while preserving colored text.
     - Proceed with the next development phases based on the requirements and task files in the `my/` directory.
