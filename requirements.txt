@@ -1,3 +1,4 @@
 llm
 PyYAML
 colorama
+yaspin

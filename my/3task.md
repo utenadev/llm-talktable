@@ -28,7 +28,7 @@
   - _要件: 2.1, 2.2, 2.3_
   - 修正・新規追加ファイル: `config.py`, `conversation.py`, `requirements.txt`, `config.yaml`
 
-- [ ] 2.1.1. 表示オプションの追加と色付き出力の修正
+- [x] 2.1.1. 表示オプションの追加と色付き出力の修正
   - `config.yaml`: `show_prompt` 設定項目を追加（デフォルト: false）
   - `config.py`: `show_prompt` 設定を読み込む機能を追加
   - `conversation.py`: `show_prompt` 設定に応じてプロンプトの表示/非表示を切り替える
@@ -38,6 +38,12 @@
   - コマンドラインオプション: `--show-prompt` を追加
   - _要件: 2.1, 2.2, 2.3 の補足_
   - 修正・新規追加ファイル: `config.yaml`, `config.py`, `conversation.py`, `main.py`
+
+- [ ] 2.1.2. 処理中インジケーター（スピナー）の追加
+  - `requirements.txt`: `yaspin` などのスピナー表示ライブラリを追加
+  - `conversation.py`: LLM呼び出し中にコンソールにスピナーを表示する機能を実装
+  - _要件: LLMが応答を生成している間、ユーザーに処理中であることを視覚的に示す_
+  - 修正・新規追加ファイル: `requirements.txt`, `conversation.py`
 
 - [ ] 3. モデレーター(MC)機能の実装
   - `config.py`: MCの設定を読み込む機能を追加

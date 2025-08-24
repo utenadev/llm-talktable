@@ -9,6 +9,10 @@ import sys
 from colorama import init as colorama_init, Fore, Style
 colorama_init() # Initialize colorama
 
+# yaspin for waiting indicator (spinner)
+from yaspin import yaspin
+from yaspin.spinners import Spinners
+
 
 class ConversationManager:
     """LLM同士の会話を管理するクラス"""
@@ -65,13 +69,6 @@ class ConversationManager:
             print(f"プロンプト: {prompt_text}")
 
         try:
-            response = model.prompt(
-                prompt_text,
-                system_fragments=system_fragments,
-                fragments=fragments,
-                stream=True  # ストリーミングを有効にする (llmライブラリが対応していれば)
-            )
-
             # show_prompt が True の場合のみ "レスポンス:" ラベルを表示
             if show_prompt:
                 print("レスポンス:")
@@ -79,20 +76,17 @@ class ConversationManager:
                 # プロンプト非表示時は、レスポンス本文の前に何も表示しない
                 pass
 
-            response_text = ""
-            # ストリームからテキストを逐次取得して蓄積 (表示はしない)
-            for chunk in response:
-                # chunk が文字列であることを期待 (llmライブラリの仕様に依存)
-                if isinstance(chunk, str):
-                    response_text += chunk
-                else:
-                    # chunk が他のオブジェクトの場合 (例: OpenAIのChatCompletionChunk)
-                    # この場合、chunk.choices[0].delta.content などからテキストを取得する必要がある
-                    # ここでは簡略化のため、str(chunk) を使用
-                    chunk_str = str(chunk)
-                    response_text += chunk_str
+            # LLM呼び出し中にスピナーを表示
+            with yaspin(Spinners.clock, text=f"{speaker.name} is thinking..."):
+                response = model.prompt(
+                    prompt_text,
+                    system_fragments=system_fragments,
+                    fragments=fragments,
+                    # stream=False # ストリーミングは使用しない
+                )
+                response_text = response.text()
 
-            # 蓄積されたレスポンステキストを色付きで表示
+            # レスポンステキストを色付きで表示
             self._print_colored_response(speaker.name, response_text)
             print("\n") # レスポンス表示後に改行
             print("-" * 20)
@@ -104,7 +98,7 @@ class ConversationManager:
                 speaker_name=speaker.name,
                 model_used=speaker.model,
                 prompt=prompt_text,
-                response=response_text, # ストリームから構成された完全なテキスト
+                response=response_text,
             )
 
             return response_text
@@ -121,6 +115,71 @@ class ConversationManager:
                 response=f"[エラー] {error_msg}",
             )
             raise
+
+    def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
+        """会話を開始する"""
+        if len(self.config.participants) < 2:
+            raise ValueError("会話には少なくとも2人の参加者が必要です。")
+
+        participant_a = self.config.participants[0]
+        participant_b = self.config.participants[1]
+
+        print(f"会話セッション開始 (ID: {self.conversation_id})")
+        print(f"テーマ: {self.config.topic}")
+        print(f"参加者A: {participant_a.name} ({participant_a.model})")
+        print(f"参加者B: {participant_b.name} ({participant_b.model})")
+        print(f"最大ターン数: {max_turns}")
+        if show_prompt:
+            print("プロンプト表示: ON")
+        else:
+            print("プロンプト表示: OFF")
+        print("-" * 40)
+
+        # 会話メタデータをデータベースに記録
+        log_conversation_meta(
+            conversation_id=self.conversation_id,
+            topic=self.config.topic,
+            participant_a_name=participant_a.name,
+            participant_a_model=participant_a.model,
+            participant_b_name=participant_b.name,
+            participant_b_model=participant_b.model,
+        )
+
+        # 初期プロンプト: テーマを提示
+        current_prompt = self.config.topic
+        current_speaker = participant_a
+        next_speaker = participant_b
+
+        for turn in range(max_turns):
+            self.turn_count = turn + 1
+            print(f"\n[ターン {self.turn_count}]")
+
+            try:
+                # 現在のスピーカーにプロンプトを送信
+                response_text = self._run_single_turn(
+                    speaker=current_speaker,
+                    prompt_text=current_prompt,
+                    show_prompt=show_prompt, # 引数を渡す
+                )
+
+                # 次のターンの準備: レスポンスを次のプロンプトにする
+                current_prompt = response_text
+                # スピーカーを交代
+                current_speaker, next_speaker = next_speaker, current_speaker
+
+                # 少し待機してAPIレート制限を考慮 (必要に応じて調整)
+                time.sleep(1)
+
+            except Exception as e:
+                print(f"会話中にエラーが発生しました。会話を終了します。: {e}")
+                break
+
+        print(f"\n会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
+
+
+# --- メイン実行用の関数 (オプション) ---
+# `main.py` から直接 `ConversationManager` をインポートして使用するため、
+# ここに `if __name__ == "__main__":` ブロックは不要です。
 
     def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
         """会話を開始する"""
