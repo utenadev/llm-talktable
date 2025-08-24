@@ -1,3 +1,5 @@
 t/
 .serena/cache/
 .venv
+__pycache__/
+

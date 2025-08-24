@@ -4,8 +4,23 @@
     - Files: `main.py`, `config.py`, `conversation.py`, `database.py`, `config.yaml`, `README.ja.md`, `LICENSE`, `requirements.txt`
     - Feature: Two LLMs can converse on a topic using `simonw/llm`, with logs saved to SQLite.
     - Feature: `Ctrl+C` interruption with user choice to Stop/Continue.
+- **Project Structure Refactored**: Project files moved from `llm_talktable/` subdirectory to the repository root for a cleaner, more standard layout.
+    - Updated documentation and internal references.
+    - Git commit: `9dccb38`
+- **Chat Display Features Enhanced**:
+    - Added `max_turns` and `show_prompt` options in `config.yaml` for flexible conversation control.
+    - Implemented colored console output for participant responses using `colorama`.
+    - Added CLI option `--show-prompt` to override config file setting.
+    - Conditional display of prompts and "Response:" labels based on `show_prompt` setting.
+    - Streaming display (type-writer effect) was implemented but is currently paused to correctly apply text colors.
+    - Git commits: `37ed21c`, `d127dc2`, `395254d`
 - **Git Commits**:
     - `e80088a`: Initial commit adding the project structure and core files.
+    - `9dccb38`: Refactor project structure to repository root.
+    - `37ed21c`: Enhance chat display features (streaming, colors, config).
+    - `d127dc2`: Update .gitignore.
+    - `395254d`: Add display options and fix colored output.
 - **Next Steps**:
-    - Test the application.
+    - Test the application with the new features.
+    - Consider re-implementing streaming output while preserving colored text.
     - Proceed with the next development phases based on the requirements and task files in the `my/` directory.
