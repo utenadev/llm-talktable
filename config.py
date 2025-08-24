@@ -2,8 +2,18 @@ import argparse
 import os
 
 # Use yaml_include for !include tag support
-import yaml_include # <- yaml_include パッケージをインポート
 import yaml
+import yaml_include
+
+
+# --- !include タグのためのセットアップ ---
+# yaml_include.Constructor のインスタンスを作成
+include_constructor = yaml_include.Constructor()
+
+# PyYAML のローダー (例: FullLoader) に !include コンストラクターを登録
+# 第一引数はタグ名 (!include), 第二引数はコンストラクター関数
+yaml.add_constructor('!include', include_constructor, Loader=yaml.FullLoader)
+# --- セットアップ完了 ---
 
 
 CONFIG_FILE_PATH = "config.yaml"
@@ -38,10 +48,9 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     if not os.path.exists(config_path):
         raise FileNotFoundError(f"設定ファイルが見つかりません: {config_path}")
 
-    # Use yaml.load with yaml_include's IncludeLoader to support !include tag
+    # 標準的な yaml.load を使用し、事前に登録した FullLoader で !include を処理
     with open(config_path, 'r', encoding='utf-8') as file:
-        # 修正: yaml_include.IncludeLoader を使用
-        config_data = yaml.load(file, Loader=yaml_include.IncludeLoader)
+        config_data = yaml.load(file, Loader=yaml.FullLoader)
 
     topic = config_data.get("topic")
     participants_data = config_data.get("participants", [])
