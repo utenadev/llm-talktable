@@ -14,6 +14,11 @@
     - Conditional display of prompts and "Response:" labels based on `show_prompt` setting.
     - Replaced streaming display (type-writer effect) with a visual spinner (`yaspin`) to indicate LLM processing time.
     - Git commits: `37ed21c`, `d127dc2`, `395254d`, `4d6495d`
+- **CTRL+C Handling Fixed and Enhanced**:
+    - Resolved issues where `Ctrl+C` during LLM calls would cause immediate program termination.
+    - Implemented robust `KeyboardInterrupt` handling that allows users to choose between continuing the current turn or stopping the entire conversation.
+    - Corrected duplicate method definitions in `conversation.py` that were overriding the custom interrupt logic.
+    - Git commits: `8b0490d`, `c56e77f`, `d363f10`, `2adc928`
 - **Git Commits**:
     - `e80088a`: Initial commit adding the project structure and core files.
     - `9dccb38`: Refactor project structure to repository root.
@@ -21,6 +26,10 @@
     - `d127dc2`: Update .gitignore.
     - `395254d`: Add display options and fix colored output.
     - `4d6495d`: Add waiting indicator (spinner) using yaspin.
+    - `8b0490d`: Fix CTRL+C handling to allow user prompt for continue/stop.
+    - `c56e77f`: Improve CTRL+C handling within LLM call.
+    - `d363f10`: Restore and refine CTRL+C handling in main.py.
+    - `2adc928`: Fix duplicate start_conversation method and restore CTRL+C handling.
 - **Development Workflow Note**:
     - As of 2025-08-24, the development process has been clarified: **All features must be tested and confirmed working on their respective feature branches *before* merging into `main`**. This ensures code quality and prevents integration issues.
 - **Next Steps**:
