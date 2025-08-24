@@ -73,68 +73,47 @@ class ConversationManager:
         if show_prompt:
             logger.debug(f"プロンプト: {prompt_text}")
 
-        try:
-            # show_prompt が True の場合のみ "レスポンス:" ラベルを表示
-            if show_prompt:
-                print("レスポンス:")
-            else:
-                # プロンプト非表示時は、レスポンス本文の前に何も表示しない
-                pass
+        # show_prompt が True の場合のみ "レスポンス:" ラベルを表示
+        if show_prompt:
+            print("レスポンス:")
+        else:
+            # プロンプト非表示時は、レスポンス本文の前に何も表示しない
+            pass
 
-            # LLM呼び出し中にスピナーを表示
-            response_text = "" # 例外発生時に空文字を返すため事前に定義
+        # LLM呼び出し中にスピナーを表示
+        response_text = "" # 例外発生時に空文字を返すため事前に定義
+        try:
             with yaspin(Spinners.bouncingBall, color="magenta",
                         text=f"{speaker.name} is thinking...") as spinner:
-                try:
-                    response = model.prompt(
-                        prompt_text,
-                        system_fragments=system_fragments,
-                        fragments=fragments,
-                        # stream=False # ストリーミングは使用しない
-                    )
-                    response_text = response.text()
-                except KeyboardInterrupt:
-                    # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
-                    spinner.stop()
-                    logger.info("LLM呼び出しが中断されました")
-                    raise # KeyboardInterruptを呼び出し元に伝播
-
-            # レスポンステキストを色付きで表示
-            self._print_colored_response(speaker.name, response_text)
-            print("\n") # レスポンステキスト表示後に改行
-            print("-" * 20)
-
-            # データベースに記録
-            log_conversation_turn(
-                conversation_id=self.conversation_id,
-                turn_number=self.turn_count,
-                speaker_name=speaker.name,
-                model_used=speaker.model,
-                prompt=prompt_text,
-                response=response_text,
-            )
-
-            return response_text
+                response = model.prompt(
+                    prompt_text,
+                    system_fragments=system_fragments,
+                    fragments=fragments,
+                    # stream=False # ストリーミングは使用しない
+                )
+                response_text = response.text()
         except KeyboardInterrupt:
-            # このメソッドで直接KeyboardInterruptをキャッチした場合も、再送出
-            # (二重キャッチを防ぐため、上のtryブロックでキャッチしたら上のブロックが優先されるべき)
-            # ただし、念のためここでもキャッチし、再送出する。
-            logger.info("_run_single_turn内でKeyboardInterruptをキャッチ")
-            raise
-        except Exception as e:
-            # その他のエラー処理
-            error_msg = f"LLM '{speaker.name}' の呼び出しに失敗しました: {e}"
-            logger.error(error_msg)
-            # エラーもログに記録
-            log_conversation_turn(
-                conversation_id=self.conversation_id,
-                turn_number=self.turn_count,
-                speaker_name=speaker.name,
-                model_used=speaker.model,
-                prompt=prompt_text,
-                response=f"[エラー] {error_msg}",
-            )
-            raise RuntimeError(error_msg) from e # 例外をラップして再送出
+            # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
+            spinner.stop()
+            logger.info("LLM呼び出しが中断されました")
+            raise # KeyboardInterruptを呼び出し元に伝播
+
+        # レスポンステキストを色付きで表示
+        self._print_colored_response(speaker.name, response_text)
+        print("\n") # レスポンステキスト表示後に改行
+        print("-" * 20)
+
+        # データベースに記録
+        log_conversation_turn(
+            conversation_id=self.conversation_id,
+            turn_number=self.turn_count,
+            speaker_name=speaker.name,
+            model_used=speaker.model,
+            prompt=prompt_text,
+            response=response_text,
+        )
+
+        return response_text
 
     def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
         """会話を開始する"""
