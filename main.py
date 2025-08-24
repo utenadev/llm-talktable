@@ -22,9 +22,9 @@ def main():
         conversation_manager = ConversationManager(app_config)
         conversation_manager.start_conversation(max_turns=app_config.max_turns, show_prompt=app_config.show_prompt)
 
-    # except KeyboardInterrupt: # <- このブロックを削除
-    #     print("\nユーザーによって操作が中断されました。")
-    #     sys.exit(0)
+    except KeyboardInterrupt:
+        # KeyboardInterruptを再送出し、conversation.pyのロジックに処理を委ねる
+        raise
     except Exception as e:
         print(f"アプリケーション実行中にエラーが発生しました: {e}")
         sys.exit(1)
