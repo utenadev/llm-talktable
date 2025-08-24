@@ -77,14 +77,21 @@ class ConversationManager:
                 pass
 
             # LLM呼び出し中にスピナーを表示
-            with yaspin(Spinners.clock, text=f"{speaker.name} is thinking..."):
-                response = model.prompt(
-                    prompt_text,
-                    system_fragments=system_fragments,
-                    fragments=fragments,
-                    # stream=False # ストリーミングは使用しない
-                )
-                response_text = response.text()
+            response_text = "" # 例外発生時に空文字を返すため事前に定義
+            with yaspin(Spinners.clock, text=f"{speaker.name} is thinking...") as spinner:
+                try:
+                    response = model.prompt(
+                        prompt_text,
+                        system_fragments=system_fragments,
+                        fragments=fragments,
+                        # stream=False # ストリーミングは使用しない
+                    )
+                    response_text = response.text()
+                except KeyboardInterrupt:
+                    # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
+                    spinner.stop()
+                    print("\n[LLM呼び出しが中断されました]")
+                    raise # KeyboardInterruptを呼び出し元に伝播
 
             # レスポンステキストを色付きで表示
             self._print_colored_response(speaker.name, response_text)
@@ -102,7 +109,14 @@ class ConversationManager:
             )
 
             return response_text
+        except KeyboardInterrupt:
+            # このメソッドで直接KeyboardInterruptをキャッチした場合も、再送出
+            # (二重キャッチを防ぐため、上のtryブロックでキャッチしたら上のブロックが優先されるべき)
+            # ただし、念のためここでもキャッチし、再送出する。
+            print("\n[_run_single_turn内でKeyboardInterruptをキャッチ]")
+            raise
         except Exception as e:
+            # その他のエラー処理
             error_msg = f"LLM '{speaker.name}' の呼び出しに失敗しました: {e}"
             print(f"エラー: {error_msg}")
             # エラーもログに記録
@@ -114,7 +128,7 @@ class ConversationManager:
                 prompt=prompt_text,
                 response=f"[エラー] {error_msg}",
             )
-            raise
+            raise # 例外を再送出して、呼び出し元で処理
 
     def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
         """会話を開始する"""
