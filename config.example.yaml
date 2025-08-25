@@ -15,7 +15,7 @@ show_prompt: false
 # モデレーター(MC)の設定
 moderator:
   name: "MC"
-  model: "gemini/gemini-2.5-flash" # 使用するLLMモデルID (llmが認識できるもの)
+  model: "gemini/gemma-3-27b-it" # 使用するLLMモデルID (llmが認識できるもの)
   persona: "あなたはこの会話のモデレーターです。会話のテーマ紹介、参加者の紹介、ラウンドの管理、会話の要約と締めくくりを行います。"
 
 # 会話参加者設定
@@ -25,5 +25,5 @@ participants:
     persona: "あなたは好奇心旺盛で楽観的なAI研究者です。人工知能の技術的進歩に大きな期待を寄せています。"
 
   - name: "ボブ" # 参加者Bの名前
-    model: "openrouter/anthropic/claude-3.5-sonnet" # 使用するLLMモデルID
+    model: "openrouter/tngtech/deepseek-r1t2-chimera:free" # 使用するLLMモデルID
     persona: "あなたは慎重で哲学的なAI倫理学者です。人工知能の社会的影響と倫理的課題に深く関心を持っています。"
