@@ -59,3 +59,8 @@
     - As of 2025-08-24, the development process has been clarified: **All features must be tested and confirmed working on their respective feature branches *before* merging into `main`**. This ensures code quality and prevents integration issues.
 - **Next Steps**:
     - Proceed with the next development phases based on the requirements and task files in the `my/` directory."- Added English README.md file and committed." 
+"- Implemented streaming display (typewriter effect) for LLM responses in conversation.py" 
+"- Implemented Moderator (MC) functionality in config.py, database.py, and conversation.py" 
+"- Implemented turn control and custom prompt configuration (llm_wait_time) in config.py and conversation.py" 
+"- Implemented unit tests for config.py, database.py, and conversation.py in the tests/ directory" 
+"- Completed final integration and polish: updated README.ja.md, added config.example.yaml, verified all requirements are met" 
