@@ -64,3 +64,4 @@
 "- Implemented turn control and custom prompt configuration (llm_wait_time) in config.py and conversation.py" 
 "- Implemented unit tests for config.py, database.py, and conversation.py in the tests/ directory" 
 "- Completed final integration and polish: updated README.ja.md, added config.example.yaml, verified all requirements are met" 
+"- Pushed all local commits to the remote GitHub repository" 
