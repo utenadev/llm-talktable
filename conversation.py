@@ -241,8 +241,8 @@ class ConversationManager:
             # スピーカーを交代
             current_speaker, next_speaker = next_speaker, current_speaker
 
-            # 少し待機してAPIレート制限を考慮 (必要に応じて調整)
-            time.sleep(1)
+            # 少し待機してAPIレート制限を考慮 (設定値を使用)
+            time.sleep(self.config.llm_wait_time)
         
         # MCによる会話の締めくくり
         logger.info("[MC] 会話の締めくくり")

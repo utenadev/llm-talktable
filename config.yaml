@@ -7,6 +7,9 @@ topic: "好きなどうぶつの話をしてください。1番目の参加者�
 # 会話の最大ターン数
 max_turns: 10
 
+# LLM呼び出し間の待機時間 (秒)
+llm_wait_time: 1
+
 # プロンプトをコンソールに出力するかどうか (デフォルト: false)
 show_prompt: false
 

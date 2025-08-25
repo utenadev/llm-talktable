@@ -37,11 +37,12 @@ class ParticipantConfig:
 class AppConfig:
     """アプリケーション全体の設定を保持するクラス"""
 
-    def __init__(self, topic: str, participants: List[ParticipantConfig], moderator: ParticipantConfig, max_turns: int = 10, show_prompt: bool = False):
+    def __init__(self, topic: str, participants: List[ParticipantConfig], moderator: ParticipantConfig, max_turns: int = 10, llm_wait_time: int = 1, show_prompt: bool = False):
         self.topic = topic
         self.participants = participants
         self.moderator = moderator
         self.max_turns = max_turns
+        self.llm_wait_time = llm_wait_time
         self.show_prompt = show_prompt
         self.db_path = DB_PATH
 
@@ -96,6 +97,11 @@ def _validate_config_data(config_data: Dict[str, Any]) -> None:
             _validate_participant(moderator_data, -1) # -1 はMCを示すインデックス
         except ValueError as e:
             raise ValueError(f"MCの設定エラー: {e}") from e
+            
+    # llm_wait_time のバリデーション (オプション)
+    llm_wait_time = config_data.get("llm_wait_time", 1)
+    if not isinstance(llm_wait_time, int) or llm_wait_time < 0:
+        raise ValueError(f"'llm_wait_time' は0以上の整数である必要があります: {llm_wait_time}")
 
 
 def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
@@ -127,8 +133,11 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
         "persona": "あなたはこの会話のモデレーターです。会話のテーマ紹介、参加者の紹介、ラウンドの管理、会話の要約と締めくくりを行います。"
     })
     moderator = ParticipantConfig(moderator_data["name"], moderator_data["model"], moderator_data["persona"])
+    
+    # llm_wait_time の設定を読み込む (デフォルト値は1秒)
+    llm_wait_time = config_data.get("llm_wait_time", 1)
 
-    return AppConfig(topic, participants, moderator, max_turns, show_prompt)
+    return AppConfig(topic, participants, moderator, max_turns, llm_wait_time, show_prompt)
 
 
 def parse_arguments() -> argparse.Namespace:
