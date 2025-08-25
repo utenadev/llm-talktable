@@ -19,7 +19,7 @@
   - _要件: 1.1, 1.2, 1.3, 1.4, 2.1, 2.2, 2.3, 2.4_
   - 修正・新規追加ファイル: `main.py`, `config.py`, `conversation.py`, `database.py`, `requirements.txt`, `config.yaml`, `README.ja.md`, `LICENSE`
 
-- [ ] 2.1. チャット表示機能の強化
+- [x] 2.1. チャット表示機能の強化
   - `config.py`: `max_turns` を `config.yaml` から読み込む機能を追加
   - `conversation.py`: レスポンステキストのコンソール出力に色を付ける機能を実装
   - `conversation.py`: レスポンステキストのストリーム表示（タイプライター効果）機能を実装（`llm` ライブラリのストリーミングサポートに依存）
@@ -39,7 +39,7 @@
   - _要件: 2.1, 2.2, 2.3 の補足_
   - 修正・新規追加ファイル: `config.yaml`, `config.py`, `conversation.py`, `main.py`
 
-- [ ] 2.1.2. 処理中インジケーター（スピナー）の追加
+- [x] 2.1.2. 処理中インジケーター（スピナー）の追加
   - `requirements.txt`: `yaspin` などのスピナー表示ライブラリを追加
   - `conversation.py`: LLM呼び出し中にコンソールにスピナーを表示する機能を実装
   - _要件: LLMが応答を生成している間、ユーザーに処理中であることを視覚的に示す_
