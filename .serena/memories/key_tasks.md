@@ -58,4 +58,4 @@
 - **Development Workflow Note**:
     - As of 2025-08-24, the development process has been clarified: **All features must be tested and confirmed working on their respective feature branches *before* merging into `main`**. This ensures code quality and prevents integration issues.
 - **Next Steps**:
-    - Proceed with the next development phases based on the requirements and task files in the `my/` directory.
+    - Proceed with the next development phases based on the requirements and task files in the `my/` directory."- Added English README.md file and committed." 

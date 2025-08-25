@@ -53,6 +53,21 @@ class ConversationManager:
         color = speaker_colors.get(speaker_name, default_color)
         print(f"{color}{response_text}{Style.RESET_ALL}")
 
+    def _print_colored_chunk(self, speaker_name: str, chunk: str):
+        """話者名に応じて色を付けたレスポンステキストのチャンクを表示する (ストリーム用)"""
+        # 話者ごとの色を定義 (config.yaml から読み込むように拡張可能)
+        speaker_colors = {
+            self.config.participants[0].name: Fore.CYAN,    # 参加者A: 水色
+            self.config.participants[1].name: Fore.MAGENTA, # 参加者B: マゼンタ
+            # MCが実装された場合はここに追加
+            # "MC": Fore.YELLOW,
+        }
+        # デフォルト色
+        default_color = Fore.WHITE
+
+        color = speaker_colors.get(speaker_name, default_color)
+        print(f"{color}{chunk}{Style.RESET_ALL}", end="", flush=True)
+
     def _run_single_turn(
         self,
         speaker: ParticipantConfig,
@@ -89,17 +104,21 @@ class ConversationManager:
                     prompt_text,
                     system_fragments=system_fragments,
                     fragments=fragments,
-                    # stream=False # ストリーミングは使用しない
+                    # stream=True # ストリーミングを使用 (デフォルトでTrueの可能性あり)
                 )
-                response_text = response.text()
+                # スピナーを停止
+                spinner.stop()
+                # レスポンスをストリームで処理 (タイプライター効果)
+                for chunk in response:
+                    self._print_colored_chunk(speaker.name, chunk)
+                    response_text += chunk
         except KeyboardInterrupt:
             # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
             spinner.stop()
             logger.info("LLM呼び出しが中断されました")
             raise # KeyboardInterruptを呼び出し元に伝播
 
-        # レスポンステキストを色付きで表示
-        self._print_colored_response(speaker.name, response_text)
+        # レスポンステキスト表示後に改行と区切り線を表示
         print("\n") # レスポンステキスト表示後に改行
         print("-" * 20)
 
