@@ -37,9 +37,10 @@ class ParticipantConfig:
 class AppConfig:
     """アプリケーション全体の設定を保持するクラス"""
 
-    def __init__(self, topic: str, participants: List[ParticipantConfig], max_turns: int = 10, show_prompt: bool = False):
+    def __init__(self, topic: str, participants: List[ParticipantConfig], moderator: ParticipantConfig, max_turns: int = 10, show_prompt: bool = False):
         self.topic = topic
         self.participants = participants
+        self.moderator = moderator
         self.max_turns = max_turns
         self.show_prompt = show_prompt
         self.db_path = DB_PATH
@@ -87,6 +88,14 @@ def _validate_config_data(config_data: Dict[str, Any]) -> None:
     show_prompt = config_data.get("show_prompt", False)
     if not isinstance(show_prompt, bool):
         raise ValueError(f"'show_prompt' は真偽値 (true/false) である必要があります: {show_prompt}")
+        
+    # moderator のバリデーション (オプション)
+    moderator_data = config_data.get("moderator")
+    if moderator_data:
+        try:
+            _validate_participant(moderator_data, -1) # -1 はMCを示すインデックス
+        except ValueError as e:
+            raise ValueError(f"MCの設定エラー: {e}") from e
 
 
 def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
@@ -110,8 +119,16 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
         ParticipantConfig(p["name"], p["model"], p["persona"])
         for p in participants_data
     ]
+    
+    # moderator の設定を読み込む (デフォルト値を設定)
+    moderator_data = config_data.get("moderator", {
+        "name": "MC",
+        "model": "gemini/gemini-2.5-flash",
+        "persona": "あなたはこの会話のモデレーターです。会話のテーマ紹介、参加者の紹介、ラウンドの管理、会話の要約と締めくくりを行います。"
+    })
+    moderator = ParticipantConfig(moderator_data["name"], moderator_data["model"], moderator_data["persona"])
 
-    return AppConfig(topic, participants, max_turns, show_prompt)
+    return AppConfig(topic, participants, moderator, max_turns, show_prompt)
 
 
 def parse_arguments() -> argparse.Namespace:

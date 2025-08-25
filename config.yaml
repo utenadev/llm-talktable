@@ -10,6 +10,12 @@ max_turns: 10
 # プロンプトをコンソールに出力するかどうか (デフォルト: false)
 show_prompt: false
 
+# モデレーター(MC)の設定
+moderator:
+  name: "MC"
+  model: "gemini/gemini-2.5-flash" # 使用するLLMモデルID (llmが認識できるもの)
+  persona: "あなたはこの会話のモデレーターです。会話のテーマ紹介、参加者の紹介、ラウンドの管理、会話の要約と締めくくりを行います。"
+
 # 会話参加者設定
 participants:
   - name: "アリス" # 参加者Aの名前

@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS conversation_log (
     model_used TEXT NOT NULL,
     prompt TEXT NOT NULL,
     response TEXT NOT NULL,
+    is_moderator BOOLEAN NOT NULL DEFAULT FALSE, -- MC発言かどうかのフラグ
     timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 """
@@ -61,9 +62,11 @@ def log_conversation_turn(
     conversation_id: str,
     turn_number: int,
     speaker_name: str,
+
     model_used: str,
     prompt: str,
     response: str,
+    is_moderator: bool = False, # MC発言かどうかのフラグ (デフォルトはFalse)
     db_path: str = DB_PATH,
 ):
     """1ターン分の会話をデータベースに記録する"""
@@ -72,10 +75,10 @@ def log_conversation_turn(
         cursor.execute(
             """
             INSERT INTO conversation_log
-            (conversation_id, turn_number, speaker_name, model_used, prompt, response)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (conversation_id, turn_number, speaker_name, model_used, prompt, response, is_moderator)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             """,
-            (conversation_id, turn_number, speaker_name, model_used, prompt, response),
+            (conversation_id, turn_number, speaker_name, model_used, prompt, response, is_moderator),
         )
 
 

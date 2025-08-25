@@ -74,6 +74,7 @@ class ConversationManager:
         prompt_text: str,
         context_fragments: Optional[List[str]] = None,
         show_prompt: bool = False, # 新しい引数
+        is_moderator: bool = False, # MC発言かどうかのフラグ (デフォルトはFalse)
     ) -> str:
         """1人のLLMにプロンプトを送信し、レスポンスを取得する"""
         model = self._get_llm_model(speaker)
@@ -130,6 +131,7 @@ class ConversationManager:
             model_used=speaker.model,
             prompt=prompt_text,
             response=response_text,
+            is_moderator=is_moderator, # MCフラグを記録
         )
 
         return response_text
@@ -141,16 +143,22 @@ class ConversationManager:
 
         participant_a = self.config.participants[0]
         participant_b = self.config.participants[1]
+        moderator = self.config.moderator # MCを取得
 
         logger.info(f"会話セッション開始 (ID: {self.conversation_id})")
-        print(f"テーマ: {self.config.topic}")
-        print(f"参加者A: {participant_a.name} ({participant_a.model})")
-        print(f"参加者B: {participant_b.name} ({participant_b.model})")
-        print(f"最大ターン数: {max_turns}")
-        if show_prompt:
-            print("プロンプト表示: ON")
-        else:
-            print("プロンプト表示: OFF")
+        
+        # MCによる会話の開始
+        self.turn_count = 0
+        logger.info("[MC] 会話の開始")
+        # MCに会話のテーマと参加者を紹介するプロンプトを送信
+        mc_intro_prompt = f"テーマ: {self.config.topic}\n参加者A: {participant_a.name} ({participant_a.model})\n参加者B: {participant_b.name} ({participant_b.model})\n\nこれらの情報を使って、会話の開始をアナウンスしてください。"
+        self._run_single_turn(
+            speaker=moderator,
+            prompt_text=mc_intro_prompt,
+            show_prompt=show_prompt,
+            is_moderator=True, # MCフラグを設定
+        )
+        
         print("-" * 40)
 
         # 会話メタデータをデータベースに記録
@@ -171,6 +179,19 @@ class ConversationManager:
         for turn in range(max_turns):
             self.turn_count = turn + 1
             logger.info(f"[ターン {self.turn_count}] 開始")
+            
+            # ラウンドの開始 (2ターンごと: A->B->A)
+            if turn % 2 == 0:
+                logger.info("[MC] ラウンドの開始")
+                # MCにラウンドの焦点や期待を述べるプロンプトを送信
+                round_number = (turn // 2) + 1
+                mc_round_prompt = f"ラウンド {round_number} を開始してください。{current_speaker.name} から {self.config.topic} についての発言をお願いします。"
+                self._run_single_turn(
+                    speaker=moderator,
+                    prompt_text=mc_round_prompt,
+                    show_prompt=show_prompt,
+                    is_moderator=True, # MCフラグを設定
+                )
 
             # --- インタラプト処理の追加 ---
             conversation_continues = True
@@ -201,6 +222,19 @@ class ConversationManager:
                             # 入力時にもう一度Ctrl+Cされた場合、プログラムを終了
                             print("\n再度中断されました。プログラムを終了します。")
                             raise # KeyboardInterruptをさらに上位に伝播 (main.pyでsys.exit(0)される)
+            
+            # ラウンドの終了 (2ターンごと: A->B->A)
+            if turn % 2 == 1:
+                logger.info("[MC] ラウンドの終了")
+                # MCに両者の発言を要約し、次のラウンドへの橋渡しをするプロンプトを送信
+                round_number = (turn // 2) + 1
+                mc_summary_prompt = f"ラウンド {round_number} で {participant_a.name} と {participant_b.name} が交わした意見:\n{current_prompt}\n{response_text}\n\nこれらを要約し、次のラウンドへの期待を述べてください。"
+                self._run_single_turn(
+                    speaker=moderator,
+                    prompt_text=mc_summary_prompt,
+                    show_prompt=show_prompt,
+                    is_moderator=True, # MCフラグを設定
+                )
 
             # 次のターンの準備: レスポンスを次のプロンプトにする
             current_prompt = response_text
@@ -209,6 +243,17 @@ class ConversationManager:
 
             # 少し待機してAPIレート制限を考慮 (必要に応じて調整)
             time.sleep(1)
+        
+        # MCによる会話の締めくくり
+        logger.info("[MC] 会話の締めくくり")
+        # MCに会話を締めくくるプロンプトを送信
+        mc_conclusion_prompt = f"{max_turns} ターンの会話を経て、{self.config.topic} についての討論を締めくくってください。"
+        self._run_single_turn(
+            speaker=moderator,
+            prompt_text=mc_conclusion_prompt,
+            show_prompt=show_prompt,
+            is_moderator=True, # MCフラグを設定
+        )
 
         logger.info(f"会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
         print(f"\n会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
