@@ -65,5 +65,8 @@
     - **Database Logging Verified**: All conversation turns properly saved to SQLite database with correct structure (conversation_id, turn_number, speaker_name, model_used, response, timestamps).
     - **UI Features Functional**: Spinner indicators, colored output, and turn management all working as expected.
     - **Task Progress Updated**: Marked tasks 0 (directory structure) and 3 (moderator functionality) as completed in my/3task.md.
+- **MC Model Change and Test Execution (2025-08-30)**:
+    - Changed the LLM model used by the Moderator (MC) from `openrouter/z-ai/glm-4.5-air:free` to `gemini/gemini-2.5-flash` due to an API error (400: Operation not allowed) encountered with the former model.
+    - After the change, the application test execution completed successfully, and the conversation summary feature was confirmed to be working correctly.
 - **Next Steps**:
     - Proceed with remaining tasks in my/3task.md: conversation summary/evaluation (task 4), turn control enhancements (task 5), testing implementation (task 6), and code review items (task 8). 

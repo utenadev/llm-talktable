@@ -1,7 +1,7 @@
 import llm
 import uuid
 from config import AppConfig, ParticipantConfig
-from database import log_conversation_turn, log_conversation_meta
+from database import log_conversation_turn, log_conversation_meta, fetch_conversation_history
 import time
 import sys
 from typing import Optional, List
@@ -264,13 +264,25 @@ class ConversationManager:
             # 少し待機してAPIレート制限を考慮 (設定値を使用)
             time.sleep(self.config.llm_wait_time)
         
-        # MCによる会話の締めくくり
-        logger.info("[MC] 会話の締めくくり")
-        # MCに会話を締めくくるプロンプトを送信
-        mc_conclusion_prompt = f"{max_turns} ターンの会話を経て、{self.config.topic} についての討論を締めくくってください。"
+        # 会話履歴を取得
+        logger.info("[MC] 会話履歴の取得")
+        conversation_history = fetch_conversation_history(self.conversation_id)
+        
+        # 会話履歴から要約プロンプトを構築
+        summary_prompt_parts = [f"テーマ: {self.config.topic}"]
+        for speaker_name, model_used, response in conversation_history:
+            # MCの発言は要約対象から除外するか、別途処理するかを検討。
+            # ここでは、MCと参加者の発言を区別してリストアップする。
+            summary_prompt_parts.append(f"{speaker_name} ({model_used}): {response}")
+        
+        summary_prompt = "\n".join(summary_prompt_parts)
+        
+        # MCに会話全体の要約を依頼
+        logger.info("[MC] 会話全体の要約")
+        mc_summary_prompt = f"以下の会話履歴を要約してください:\n\n{summary_prompt}"
         self._run_single_turn(
             speaker=moderator,
-            prompt_text=mc_conclusion_prompt,
+            prompt_text=mc_summary_prompt,
             show_prompt=show_prompt,
             is_moderator=True, # MCフラグを設定
         )

@@ -1,7 +1,7 @@
 import sqlite3
 import os
 from contextlib import contextmanager
-from typing import Generator
+from typing import Generator, List, Tuple
 from config import DB_PATH
 
 # 会話ログテーブル作成SQL
@@ -110,3 +110,28 @@ def log_conversation_meta(
                 participant_b_model,
             ),
         )
+
+
+def fetch_conversation_history(conversation_id: str, db_path: str = DB_PATH) -> List[Tuple[str, str, str]]:
+    """
+    指定された会話IDの会話履歴を取得する。
+    
+    Args:
+        conversation_id: 取得する会話のID。
+        db_path: データベースファイルのパス。
+        
+    Returns:
+        List[Tuple[str, str, str]]: (speaker_name, model_used, response) のタプルのリスト。
+    """
+    with get_db_connection(db_path) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT speaker_name, model_used, response
+            FROM conversation_log
+            WHERE conversation_id = ?
+            ORDER BY turn_number ASC
+            """,
+            (conversation_id,)
+        )
+        return cursor.fetchall()

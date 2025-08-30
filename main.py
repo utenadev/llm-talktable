@@ -1,14 +1,22 @@
 #!/usr/bin/env python3
 """
-LLM TalkTable: LLM同士がテーマについて会話するアプリケーション
+LLM TalkTable アプリケーションのエントリーポイント
 """
+import argparse
 import sys
-from config import get_app_config
-from database import init_db
+import io
+from config import get_app_config, AppConfig
 from conversation import ConversationManager
-
-# logging
+from database import init_db
+import logging
 from logger import setup_logger
+
+# Windows環境で絵文字などを含む出力を可能にするため、標準出力/標準エラー出力のエンコーディングをUTF-8に設定
+if sys.platform == "win32":
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+    sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8')
+
+# ロガーの設定
 logger = setup_logger(__name__)
 
 
