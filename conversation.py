@@ -5,6 +5,7 @@ from database import log_conversation_turn, log_conversation_meta
 import time
 import sys
 from typing import Optional, List
+import importlib
 
 # colorama for colored console output
 from colorama import init as colorama_init, Fore, Style
@@ -16,7 +17,12 @@ from yaspin.spinners import Spinners
 
 # logging
 from logger import setup_logger
-logger = setup_logger(__name__)
+logger = setup_logger(__name__, level="DEBUG")
+
+# llm-gemini プラグインがロードされるように、llm モジュールをリロードする
+importlib.reload(llm)
+llm.load_plugins()
+logger.debug(f"モジュールロード時にロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
 
 
 class ConversationManager:
@@ -30,10 +36,24 @@ class ConversationManager:
     def _get_llm_model(self, participant: ParticipantConfig):
         """ParticipantConfigからllm.Modelインスタンスを取得"""
         try:
+            logger.debug(f"モデル '{participant.model}' を取得します。")
+            # モジュールロード時に llm.load_plugins() を呼び出しているため、
+            # ここでは呼び出さない。
+            # llm.load_plugins()
+            # デバッグ用にプラグインマネージャーの状態を出力
+            logger.debug(f"プラグインマネージャー: {llm.pm}")
+            logger.debug(f"ロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
+            # デバッグ用に登録されているモデルとエイリアスの一覧を出力
+            models_with_aliases = llm.get_models_with_aliases()
+            logger.debug(f"登録されているモデルとエイリアス:")
+            for mwa in models_with_aliases:
+                logger.debug(f"  モデル: {mwa.model}, エイリアス: {mwa.aliases}")
             model = llm.get_model(participant.model)
+            logger.debug(f"モデル '{participant.model}' を取得しました。")
             # llmのキー設定は外部で行われている前提
             return model
         except Exception as e:
+            logger.error(f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}")
             raise ValueError(
                 f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}"
             ) from e
