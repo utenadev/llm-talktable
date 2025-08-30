@@ -57,11 +57,13 @@
     - `a30adfe`: refactor: Optimize database connection management with contextmanager
 - **Development Workflow Note**:
     - As of 2025-08-24, the development process has been clarified: **All features must be tested and confirmed working on their respective feature branches *before* merging into `main`**. This ensures code quality and prevents integration issues.
+- **Application Testing and Verification (2025-08-30)**:
+    - **Full Application Test**: Conducted comprehensive testing of the LLM TalkTable application with real LLM models (Gemini and OpenRouter).
+    - **Moderator Functionality Verified**: MC successfully managed conversation flow, provided round summaries, and delivered final wrap-up.
+    - **Multi-LLM Integration Confirmed**: Different LLM models (gemini/gemini-2.5-flash, openrouter/z-ai/glm-4.5-air:free) worked seamlessly together.
+    - **Persona System Working**: Participant personalities (Alice: energetic/bright, Karen: quiet/reserved) were clearly expressed and maintained throughout conversation.
+    - **Database Logging Verified**: All conversation turns properly saved to SQLite database with correct structure (conversation_id, turn_number, speaker_name, model_used, response, timestamps).
+    - **UI Features Functional**: Spinner indicators, colored output, and turn management all working as expected.
+    - **Task Progress Updated**: Marked tasks 0 (directory structure) and 3 (moderator functionality) as completed in my/3task.md.
 - **Next Steps**:
-    - Proceed with the next development phases based on the requirements and task files in the `my/` directory."- Added English README.md file and committed." 
-"- Implemented streaming display (typewriter effect) for LLM responses in conversation.py" 
-"- Implemented Moderator (MC) functionality in config.py, database.py, and conversation.py" 
-"- Implemented turn control and custom prompt configuration (llm_wait_time) in config.py and conversation.py" 
-"- Implemented unit tests for config.py, database.py, and conversation.py in the tests/ directory" 
-"- Completed final integration and polish: updated README.ja.md, added config.example.yaml, verified all requirements are met" 
-"- Pushed all local commits to the remote GitHub repository" 
+    - Proceed with remaining tasks in my/3task.md: conversation summary/evaluation (task 4), turn control enhancements (task 5), testing implementation (task 6), and code review items (task 8). 
