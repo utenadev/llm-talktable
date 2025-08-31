@@ -89,6 +89,7 @@ participants:
 
 ```bash
 # Basic run (uses settings from config.yaml)
+# Only records the conversation content, does not output prompts or summaries to the console.
 python main.py
 
 # Specify the conversation topic from the command line
@@ -96,6 +97,13 @@ python main.py --topic "The Future of Space Travel"
 
 # Use a different configuration file
 python main.py --config my_other_config.yaml
+
+# Output prompts to the console (--show-prompt, default is false)
+python main.py --show-prompt
+
+# Output a summary to the console after the conversation ends (--show-summary, default is false)
+# Does not create a summary for each conversation turn, aggregates the content at the end.
+python main.py --show-summary
 ```
 
 After execution, the conversation content will be recorded in `logs/conversation.db`.

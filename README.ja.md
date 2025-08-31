@@ -111,6 +111,7 @@ participants:
 
 ```bash
 # 基本実行 (config.yaml の設定を使用)
+# 会話内容のみを記録し、プロンプトや要約はコンソールに出力しません。
 python main.py
 
 # 会話テーマをコマンドラインから指定
@@ -118,6 +119,13 @@ python main.py --topic "宇宙旅行の未来"
 
 # 異なる設定ファイルを使用
 python main.py --config my_other_config.yaml
+
+# プロンプトをコンソールに出力 (デフォルトは false)
+python main.py --show-prompt
+
+# 会話終了後にサマリーをコンソールに出力 (デフォルトは false)
+# 会話毎のサマリは作らず、会話終了後に内容を集約します。
+python main.py --show-summary
 ```
 
 実行後、会話内容は `logs/conversation.db` に記録されます。
