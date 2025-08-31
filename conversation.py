@@ -5,6 +5,7 @@ from database import log_conversation_turn, log_conversation_meta, fetch_convers
 import time
 import sys
 from typing import Optional, List
+import logging
 import importlib
 
 # colorama for colored console output
@@ -15,52 +16,38 @@ colorama_init() # Initialize colorama
 from yaspin import yaspin
 from yaspin.spinners import Spinners
 
-# logging
-import logging
-# from logger import setup_logger
-# logger = setup_logger(__name__) # level="DEBUG" 引数を削除
-# ロガーは__init__でセットアップする
-logger: logging.Logger
-
 # llm-gemini プラグインがロードされるように、llm モジュールをリロードする
 importlib.reload(llm)
 llm.load_plugins()
-# logger.debug(f"モジュールロード時にロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
 
 
 class ConversationManager:
     """LLM同士の会話を管理するクラス"""
 
-    def __init__(self, config: AppConfig, log_level: str = "INFO"):
+    def __init__(self, config: AppConfig, logger: logging.Logger):
         self.config = config
+        self.logger = logger
         self.conversation_id = str(uuid.uuid4())
         self.turn_count = 0
-        # ロガーをセットアップ
-        from logger import setup_logger
-        global logger
-        logger = setup_logger(__name__, log_level)
 
     def _get_llm_model(self, participant: ParticipantConfig):
         """ParticipantConfigからllm.Modelインスタンスを取得"""
         try:
-            logger.debug(f"モデル '{participant.model}' を取得します。")
-            # モジュールロード時に llm.load_plugins() を呼び出しているため、
-            # ここでは呼び出さない。
-            # llm.load_plugins()
+            self.logger.debug(f"モデル '{participant.model}' を取得します。")
             # デバッグ用にプラグインマネージャーの状態を出力
-            logger.debug(f"プラグインマネージャー: {llm.pm}")
-            logger.debug(f"ロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
+            self.logger.debug(f"プラグインマネージャー: {llm.pm}")
+            self.logger.debug(f"ロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
             # デバッグ用に登録されているモデルとエイリアスの一覧を出力
             models_with_aliases = llm.get_models_with_aliases()
-            logger.debug(f"登録されているモデルとエイリアス:")
+            self.logger.debug(f"登録されているモデルとエイリアス:")
             for mwa in models_with_aliases:
-                logger.debug(f"  モデル: {mwa.model}, エイリアス: {mwa.aliases}")
+                self.logger.debug(f"  モデル: {mwa.model}, エイリアス: {mwa.aliases}")
             model = llm.get_model(participant.model)
-            logger.debug(f"モデル '{participant.model}' を取得しました。")
+            self.logger.debug(f"モデル '{participant.model}' を取得しました。")
             # llmのキー設定は外部で行われている前提
             return model
         except Exception as e:
-            logger.error(f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}")
+            self.logger.error(f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}")
             raise ValueError(
                 f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}"
             ) from e
@@ -118,10 +105,10 @@ class ConversationManager:
         system_fragments = [speaker.persona] if speaker.persona else []
         fragments = context_fragments if context_fragments else []
 
-        logger.info(f"{speaker.name} ({speaker.model}) の発言開始")
+        self.logger.info(f"{speaker.name} ({speaker.model}) の発言開始")
         # show_prompt が True の場合のみプロンプトを表示
         if show_prompt:
-            logger.debug(f"プロンプト: {prompt_text}")
+            self.logger.debug(f"プロンプト: {prompt_text}")
 
         # show_prompt が True の場合のみ \"レスポンス:\" ラベルを表示
         if show_prompt:
@@ -175,7 +162,7 @@ class ConversationManager:
         except KeyboardInterrupt:
             # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
             spinner.stop()
-            logger.info("LLM呼び出しが中断されました")
+            self.logger.info("LLM呼び出しが中断されました")
             raise # KeyboardInterruptを呼び出し元に伝播
 
         # レスポンステキスト表示後に改行と区切り線を表示
@@ -204,11 +191,11 @@ class ConversationManager:
         participant_b = self.config.participants[1]
         moderator = self.config.moderator # MCを取得
 
-        logger.info(f"会話セッション開始 (ID: {self.conversation_id})")
+        self.logger.info(f"会話セッション開始 (ID: {self.conversation_id})")
         
         # MCによる会話の開始
         self.turn_count = 0
-        logger.info("[MC] 会話の開始")
+        self.logger.info("[MC] 会話の開始")
         # MCに会話のテーマと参加者を紹介するプロンプトを送信
         mc_intro_prompt = f"テーマ: {self.config.topic}\n参加者A: {participant_a.name} ({participant_a.model})\n参加者B: {participant_b.name} ({participant_b.model})\n\nこれらの情報を使って、会話の開始をアナウンスしてください。"
         self._run_single_turn(
@@ -237,20 +224,8 @@ class ConversationManager:
 
         for turn in range(max_turns):
             self.turn_count = turn + 1
-            logger.info(f"[ターン {self.turn_count}] 開始")
+            self.logger.info(f"[ターン {self.turn_count}] 開始")
             
-            # 最初のターン (turn == 0) にMCがトピックの説明を行う
-            if turn == 0:
-                logger.info("[MC] 会話の開始")
-                # MCに会話のテーマ紹介、参加者の紹介、ラウンドの管理を行うプロンプトを送信
-                mc_initial_prompt = f"テーマ: {self.config.topic}\n\n参加者A: {participant_a.name} ({participant_a.model})\n参加者B: {participant_b.name} ({participant_b.model})\n\nこれらの情報を使って、会話の開始をアナウンスしてください。"
-                self._run_single_turn(
-                    speaker=moderator,
-                    prompt_text=mc_initial_prompt,
-                    show_prompt=show_prompt,
-                    is_moderator=True, # MCフラグを設定
-                )
-
             # --- インタラプト処理の追加 ---
             conversation_continues = True
             while conversation_continues:
@@ -281,19 +256,6 @@ class ConversationManager:
                             print("\n再度中断されました。プログラムを終了します。")
                             raise # KeyboardInterruptをさらに上位に伝播 (main.pyでsys.exit(0)される)
             
-            # 最後のターン (turn == max_turns - 1) にMCが会話の要約を行う
-            # show_summary が True の場合のみ要約を行う
-            if turn == max_turns - 1 and show_summary:
-                logger.info("[MC] 会話の終了")
-                # MCに会話全体の要約を依頼
-                mc_final_summary_prompt = f"テーマ: {self.config.topic}\n\n参加者A: {participant_a.name} ({participant_a.model})\n参加者B: {participant_b.name} ({participant_b.model})\n\nこれらの情報を使って、会話の終了をアナウンスし、会話内容を要約してください。"
-                self._run_single_turn(
-                    speaker=moderator,
-                    prompt_text=mc_final_summary_prompt,
-                    show_prompt=show_prompt,
-                    is_moderator=True, # MCフラグを設定
-                )
-
             # 次のターンの準備: レスポンスを次のプロンプトにする
             current_prompt = response_text
             # スピーカーを交代
@@ -304,7 +266,7 @@ class ConversationManager:
         
         # 会話全体の要約 (show_summaryがTrueの場合)
         if show_summary:
-            # logger.info("[MC] 会話履歴の取得")
+            # self.logger.info("[MC] 会話履歴の取得")
             # 会話履歴を取得
             conversation_history = fetch_conversation_history(self.conversation_id)
             
@@ -318,7 +280,7 @@ class ConversationManager:
             summary_prompt = "\n".join(summary_prompt_parts)
             
             # MCに会話全体の要約を依頼
-            # logger.info("[MC] 会話全体の要約")
+            self.logger.info("[MC] 会話全体の要約")
             mc_summary_prompt = f"以下の会話履歴を要約してください:\n\n{summary_prompt}"
             self._run_single_turn(
                 speaker=moderator,
@@ -326,33 +288,8 @@ class ConversationManager:
                 show_prompt=show_prompt,
                 is_moderator=True, # MCフラグを設定
             )
-        
-        # 会話要約の出力 (show_summaryがTrueの場合)
-        if show_summary:
-            logger.info("[MC] 会話要約の出力")
-            # 会話履歴を取得
-            conversation_history = fetch_conversation_history(self.conversation_id)
-            
-            # 会話履歴から要約プロンプトを構築
-            summary_prompt_parts = [f"テーマ: {self.config.topic}"]
-            for speaker_name, model_used, response in conversation_history:
-                # MCの発言は要約対象から除外するか、別途処理するかを検討。
-                # ここでは、MCと参加者の発言を区別してリストアップする。
-                summary_prompt_parts.append(f"{speaker_name} ({model_used}): {response}")
-            
-            summary_prompt = "\n".join(summary_prompt_parts)
-            
-            # MCに会話全体の要約を依頼
-            logger.info("[MC] 会話全体の要約")
-            mc_summary_output_prompt = f"以下の会話履歴を要約してください:\n\n{summary_prompt}"
-            self._run_single_turn(
-                speaker=moderator,
-                prompt_text=mc_summary_output_prompt,
-                show_prompt=show_prompt,
-                is_moderator=True, # MCフラグを設定
-            )
 
-        # logger.info(f"会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
+        # self.logger.info(f"会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
         print(f"\n会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
 
 

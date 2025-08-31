@@ -83,7 +83,7 @@ def main():
         logger.info(f"データベースを初期化しました: {app_config.db_path}")
 
         # 4. 会話マネージャーを作成し、会話を開始
-        conversation_manager = ConversationManager(app_config, app_config.log_level)
+        conversation_manager = ConversationManager(app_config, logger)
         conversation_manager.start_conversation(
             max_turns=app_config.max_turns, 
             show_prompt=app_config.show_prompt,
@@ -99,9 +99,12 @@ def main():
         raise
     except Exception as e:
         if 'logger' in locals():
-            logger.error(f"アプリケーション実行中にエラーが発生しました: {e}")
+            logger.exception(f"アプリケーション実行中に予期せぬエラーが発生しました: {e}")
         else:
-            print(f"アプリケーション実行中にエラーが発生しました: {e}")
+            # ロガーがセットアップされる前にエラーが発生した場合のフォールバック
+            import traceback
+            print(f"アプリケーション実行中にエラーが発生しました: {e}", file=sys.stderr)
+            traceback.print_exc()
         sys.exit(1)
 
 
