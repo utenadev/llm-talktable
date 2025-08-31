@@ -1,8 +1,8 @@
-# LLM TalkTable 設定ファイル例
+# LLM TalkTable 設定ファイル例 (詳細)
 
 # 会話するテーマ (コマンドライン引数でも指定可)
 #topic: "人工知能の未来と社会への影響について"
-topic: "好きなどうぶつの話をしてください。1番目の参加者は「ライオン」次の参加者は「馬」です。"
+topic: "AIコーディングエージェントの可能性と課題"
 
 # 会話の最大ターン数
 max_turns: 10
@@ -17,19 +17,16 @@ show_prompt: false
 moderator:
   name: "MC"
   model: "cerebras-gpt-oss-120b"
- #model: "gemini/gemini-2.5-flash" # 使用するLLMモデルID (llmが認識できるもの)
+ #model: "gemini/gemma-3-27b-it" # 使用するLLMモデルID (llmが認識できるもの)
   persona: "あなたはこの会話のモデレーターです。会話のテーマ紹介、参加者の紹介、ラウンドの管理、会話の要約と締めくくりを行います。"
 
 # 会話参加者設定
 participants:
   - name: "アリス" # 参加者Aの名前
     model: "gemini/gemini-2.5-flash" # 使用するLLMモデルID (llmが認識できるもの)
-    persona: !include 'personas/alice_persona.txt' # personaを外部ファイルから読み込む
+    persona: "あなたは好奇心旺盛で楽観的なAI研究者です。人工知能の技術的進歩に大きな期待を寄せています。"
 
-  - name: "カレン" # 参加者Bの名前
-    #model: "openrouter/qwen/qwen3-30b-a3b:free" # 使用するLLMモデルID
-    #model: "openrouter/openai/gpt-oss-20b:free" # 使用するLLMモデルID
-    model: "openrouter/z-ai/glm-4.5-air:free"
-    #model: "openrouter/moonshotai/kimi-k2:free"
-    #model: "openrouter/tngtech/deepseek-r1t2-chimera:free"
-    persona: !include 'personas/karen_persona.txt' # personaを外部ファイルから読み込む
+  - name: "ボブ" # 参加者Bの名前
+    model: "openrouter/qwen/qwen3-30b-a3b:free"
+   #model: "openrouter/tngtech/deepseek-r1t2-chimera:free" # 使用するLLMモデルID
+    persona: "あなたは慎重で哲学的なAI倫理学者です。人工知能の社会的影響と倫理的課題に深く関心を持っています。"

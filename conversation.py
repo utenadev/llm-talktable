@@ -16,22 +16,29 @@ from yaspin import yaspin
 from yaspin.spinners import Spinners
 
 # logging
-from logger import setup_logger
-logger = setup_logger(__name__, level="DEBUG")
+import logging
+# from logger import setup_logger
+# logger = setup_logger(__name__) # level="DEBUG" 引数を削除
+# ロガーは__init__でセットアップする
+logger: logging.Logger
 
 # llm-gemini プラグインがロードされるように、llm モジュールをリロードする
 importlib.reload(llm)
 llm.load_plugins()
-logger.debug(f"モジュールロード時にロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
+# logger.debug(f"モジュールロード時にロードされているプラグイン: {list(llm.pm.list_name_plugin())}")
 
 
 class ConversationManager:
     """LLM同士の会話を管理するクラス"""
 
-    def __init__(self, config: AppConfig):
+    def __init__(self, config: AppConfig, log_level: str = "INFO"):
         self.config = config
         self.conversation_id = str(uuid.uuid4())
         self.turn_count = 0
+        # ロガーをセットアップ
+        from logger import setup_logger
+        global logger
+        logger = setup_logger(__name__, log_level)
 
     def _get_llm_model(self, participant: ParticipantConfig):
         """ParticipantConfigからllm.Modelインスタンスを取得"""
@@ -58,7 +65,7 @@ class ConversationManager:
                 f"モデル '{participant.model}' の取得に失敗しました (参加者: {participant.name}): {e}"
             ) from e
 
-    def _print_colored_response(self, speaker_name: str, response_text: str):
+    def _print_colored_response(self, speaker_name: str, response_text: str, end: str = "\n"):
         """話者名に応じて色を付けたレスポンステキストを表示する"""
         # 話者ごとの色を定義 (config.yaml から読み込むように拡張可能)
         speaker_colors = {
@@ -71,9 +78,9 @@ class ConversationManager:
         default_color = Fore.WHITE
 
         color = speaker_colors.get(speaker_name, default_color)
-        print(f"{color}{response_text}{Style.RESET_ALL}")
+        print(f"{color}{response_text}{Style.RESET_ALL}", end=end)
 
-    def _print_colored_chunk(self, speaker_name: str, chunk: str):
+    def _print_colored_chunk(self, speaker_name: str, chunk: str, with_name: bool = False):
         """話者名に応じて色を付けたレスポンステキストのチャンクを表示する (ストリーム用)"""
         # 話者ごとの色を定義 (config.yaml から読み込むように拡張可能)
         speaker_colors = {
@@ -86,7 +93,14 @@ class ConversationManager:
         default_color = Fore.WHITE
 
         color = speaker_colors.get(speaker_name, default_color)
-        print(f"{color}{chunk}{Style.RESET_ALL}", end="", flush=True)
+        # 最初のチャンクが改行のみの場合は、話者名を表示しない
+        if with_name and chunk.strip():
+            print(f"{color}{speaker_name}: {chunk}{Style.RESET_ALL}", end="", flush=True)
+        elif with_name and not chunk.strip():
+            # 最初のチャンクが改行のみの場合は、何も表示しない
+            pass
+        else:
+            print(f"{color}{chunk}{Style.RESET_ALL}", end="", flush=True)
 
     def _run_single_turn(
         self,
@@ -109,11 +123,13 @@ class ConversationManager:
         if show_prompt:
             logger.debug(f"プロンプト: {prompt_text}")
 
-        # show_prompt が True の場合のみ "レスポンス:" ラベルを表示
+        # show_prompt が True の場合のみ \"レスポンス:\" ラベルを表示
         if show_prompt:
             print("レスポンス:")
         else:
-            # プロンプト非表示時は、レスポンス本文の前に何も表示しない
+            # プロンプト非表示時は、レスポンス本文の前に話者名を表示
+            # この表示はストリーム処理の最初に移動したためコメントアウト
+            # self._print_colored_response(speaker.name, f"{speaker.name}: ")
             pass
 
         # LLM呼び出し中にスピナーを表示
@@ -130,8 +146,31 @@ class ConversationManager:
                 # スピナーを停止
                 spinner.stop()
                 # レスポンスをストリームで処理 (タイプライター効果)
+                # 最初のチャンクの前に話者名を表示するロジックは、
+                # first_chunk の処理に集約されているため、ここは削除
+                response_text = ""
+                first_chunk = True
                 for chunk in response:
-                    self._print_colored_chunk(speaker.name, chunk)
+                    if show_prompt:
+                        self._print_colored_chunk(speaker.name, chunk)
+                    else:
+                        # プロンプト非表示時は、最初のチャンクの前に話者名を表示
+                        if first_chunk:
+                            cleaned_chunk = chunk
+                            # 話者名プレフィックスをチェックして削除
+                            speaker_prefix = f"{speaker.name}:"
+                            if cleaned_chunk.lstrip().startswith(speaker_prefix):
+                                # プレフィックスが見つかった場合、それを取り除く
+                                prefix_pos = cleaned_chunk.find(speaker_prefix)
+                                cleaned_chunk = cleaned_chunk[prefix_pos + len(speaker_prefix):]
+                            
+                            # 先頭の改行を削除
+                            cleaned_chunk = cleaned_chunk.lstrip()
+
+                            self._print_colored_chunk(speaker.name, cleaned_chunk, with_name=True)
+                            first_chunk = False
+                        else:
+                            self._print_colored_chunk(speaker.name, chunk)
                     response_text += chunk
         except KeyboardInterrupt:
             # LLM呼び出し中にCtrl+Cが押された場合、スピナーを停止し、例外を再送出
@@ -156,7 +195,7 @@ class ConversationManager:
 
         return response_text
 
-    def start_conversation(self, max_turns: int = 10, show_prompt: bool = False): # 引数を追加
+    def start_conversation(self, max_turns: int = 10, show_prompt: bool = False, show_summary: bool = False): # 引数を追加
         """会話を開始する"""
         if len(self.config.participants) < 2:
             raise ValueError("会話には少なくとも2人の参加者が必要です。")
@@ -179,8 +218,6 @@ class ConversationManager:
             is_moderator=True, # MCフラグを設定
         )
         
-        print("-" * 40)
-
         # 会話メタデータをデータベースに記録
         log_conversation_meta(
             conversation_id=self.conversation_id,
@@ -200,15 +237,14 @@ class ConversationManager:
             self.turn_count = turn + 1
             logger.info(f"[ターン {self.turn_count}] 開始")
             
-            # ラウンドの開始 (2ターンごと: A->B->A)
-            if turn % 2 == 0:
-                logger.info("[MC] ラウンドの開始")
-                # MCにラウンドの焦点や期待を述べるプロンプトを送信
-                round_number = (turn // 2) + 1
-                mc_round_prompt = f"ラウンド {round_number} を開始してください。{current_speaker.name} から {self.config.topic} についての発言をお願いします。"
+            # 最初のターン (turn == 0) にMCがトピックの説明を行う
+            if turn == 0:
+                logger.info("[MC] 会話の開始")
+                # MCに会話のテーマ紹介、参加者の紹介、ラウンドの管理を行うプロンプトを送信
+                mc_initial_prompt = f"テーマ: {self.config.topic}\n\n参加者A: {participant_a.name} ({participant_a.model})\n参加者B: {participant_b.name} ({participant_b.model})\n\nこれらの情報を使って、会話の開始をアナウンスしてください。"
                 self._run_single_turn(
                     speaker=moderator,
-                    prompt_text=mc_round_prompt,
+                    prompt_text=mc_initial_prompt,
                     show_prompt=show_prompt,
                     is_moderator=True, # MCフラグを設定
                 )
@@ -243,15 +279,15 @@ class ConversationManager:
                             print("\n再度中断されました。プログラムを終了します。")
                             raise # KeyboardInterruptをさらに上位に伝播 (main.pyでsys.exit(0)される)
             
-            # ラウンドの終了 (2ターンごと: A->B->A)
-            if turn % 2 == 1:
-                logger.info("[MC] ラウンドの終了")
-                # MCに両者の発言を要約し、次のラウンドへの橋渡しをするプロンプトを送信
-                round_number = (turn // 2) + 1
-                mc_summary_prompt = f"ラウンド {round_number} で {participant_a.name} と {participant_b.name} が交わした意見:\n{current_prompt}\n{response_text}\n\nこれらを要約し、次のラウンドへの期待を述べてください。"
+            # 最後のターン (turn == max_turns - 1) にMCが会話の要約を行う
+            # show_summary が True の場合のみ要約を行う
+            if turn == max_turns - 1 and show_summary:
+                logger.info("[MC] 会話の終了")
+                # MCに会話全体の要約を依頼
+                mc_final_summary_prompt = f"テーマ: {self.config.topic}\n\n参加者A: {participant_a.name} ({participant_a.model})\n参加者B: {participant_b.name} ({participant_b.model})\n\nこれらの情報を使って、会話の終了をアナウンスし、会話内容を要約してください。"
                 self._run_single_turn(
                     speaker=moderator,
-                    prompt_text=mc_summary_prompt,
+                    prompt_text=mc_final_summary_prompt,
                     show_prompt=show_prompt,
                     is_moderator=True, # MCフラグを設定
                 )
@@ -264,30 +300,57 @@ class ConversationManager:
             # 少し待機してAPIレート制限を考慮 (設定値を使用)
             time.sleep(self.config.llm_wait_time)
         
-        # 会話履歴を取得
-        logger.info("[MC] 会話履歴の取得")
-        conversation_history = fetch_conversation_history(self.conversation_id)
+        # 会話全体の要約 (show_summaryがTrueの場合)
+        if show_summary:
+            # logger.info("[MC] 会話履歴の取得")
+            # 会話履歴を取得
+            conversation_history = fetch_conversation_history(self.conversation_id)
+            
+            # 会話履歴から要約プロンプトを構築
+            summary_prompt_parts = [f"テーマ: {self.config.topic}"]
+            for speaker_name, model_used, response in conversation_history:
+                # MCの発言は要約対象から除外するか、別途処理するかを検討。
+                # ここでは、MCと参加者の発言を区別してリストアップする。
+                summary_prompt_parts.append(f"{speaker_name} ({model_used}): {response}")
+            
+            summary_prompt = "\n".join(summary_prompt_parts)
+            
+            # MCに会話全体の要約を依頼
+            # logger.info("[MC] 会話全体の要約")
+            mc_summary_prompt = f"以下の会話履歴を要約してください:\n\n{summary_prompt}"
+            self._run_single_turn(
+                speaker=moderator,
+                prompt_text=mc_summary_prompt,
+                show_prompt=show_prompt,
+                is_moderator=True, # MCフラグを設定
+            )
         
-        # 会話履歴から要約プロンプトを構築
-        summary_prompt_parts = [f"テーマ: {self.config.topic}"]
-        for speaker_name, model_used, response in conversation_history:
-            # MCの発言は要約対象から除外するか、別途処理するかを検討。
-            # ここでは、MCと参加者の発言を区別してリストアップする。
-            summary_prompt_parts.append(f"{speaker_name} ({model_used}): {response}")
-        
-        summary_prompt = "\n".join(summary_prompt_parts)
-        
-        # MCに会話全体の要約を依頼
-        logger.info("[MC] 会話全体の要約")
-        mc_summary_prompt = f"以下の会話履歴を要約してください:\n\n{summary_prompt}"
-        self._run_single_turn(
-            speaker=moderator,
-            prompt_text=mc_summary_prompt,
-            show_prompt=show_prompt,
-            is_moderator=True, # MCフラグを設定
-        )
+        # 会話要約の出力 (show_summaryがTrueの場合)
+        if show_summary:
+            logger.info("[MC] 会話要約の出力")
+            # 会話履歴を取得
+            conversation_history = fetch_conversation_history(self.conversation_id)
+            
+            # 会話履歴から要約プロンプトを構築
+            summary_prompt_parts = [f"テーマ: {self.config.topic}"]
+            for speaker_name, model_used, response in conversation_history:
+                # MCの発言は要約対象から除外するか、別途処理するかを検討。
+                # ここでは、MCと参加者の発言を区別してリストアップする。
+                summary_prompt_parts.append(f"{speaker_name} ({model_used}): {response}")
+            
+            summary_prompt = "\n".join(summary_prompt_parts)
+            
+            # MCに会話全体の要約を依頼
+            logger.info("[MC] 会話全体の要約")
+            mc_summary_output_prompt = f"以下の会話履歴を要約してください:\n\n{summary_prompt}"
+            self._run_single_turn(
+                speaker=moderator,
+                prompt_text=mc_summary_output_prompt,
+                show_prompt=show_prompt,
+                is_moderator=True, # MCフラグを設定
+            )
 
-        logger.info(f"会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
+        # logger.info(f"会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
         print(f"\n会話セッション終了 (ID: {self.conversation_id}, 最大ターン数: {max_turns})")
 
 

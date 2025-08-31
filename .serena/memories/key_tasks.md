@@ -78,5 +78,11 @@
     - Updated `README.md` and `README.ja.md` to clearly specify the default behavior of `--show-prompt` (default: `false`) and `--show-summary` (default: `false`) command-line options.
     - Clarified that when run without options, the application only records the conversation content without displaying prompts or summaries.
     - Verified that the application starts correctly and displays the help message.
+- **MC Summary Default Enabled and Initial Speaker Name Formatting Fix (2025-08-31)**:
+    - Changed the default value of the `--show-summary` CLI option to `true`. The conversation summary is now displayed by default unless explicitly disabled with `--no-summary`.
+    - Fixed an issue where the speaker's name (e.g., `MC:`, `Alice:`) was printed even when the LLM's first response chunk was only a newline character. Speaker names are now suppressed in such cases.
+    - Addressed warnings related to `jsonschema` not being installed by installing the `jsonschema` package, which is a dependency for some `llm` plugins like `llm-cerebras`.
+    - Modified the conversation flow logic in `conversation.py` to restrict Moderator (MC) interventions to only the initial topic introduction and the final summary, removing intermediate round-start prompts.
+    - Refactored internal methods `_print_colored_response` and `_print_colored_chunk` in `conversation.py` to support conditional newline suppression and correct speaker name printing.
 - **Next Steps**:
     - Proceed with remaining tasks in my/3task.md: conversation summary/evaluation (task 4), turn control enhancements (task 5), testing implementation (task 6), and code review items (task 8). 

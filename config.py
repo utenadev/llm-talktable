@@ -37,13 +37,15 @@ class ParticipantConfig:
 class AppConfig:
     """アプリケーション全体の設定を保持するクラス"""
 
-    def __init__(self, topic: str, participants: List[ParticipantConfig], moderator: ParticipantConfig, max_turns: int = 10, llm_wait_time: int = 1, show_prompt: bool = False):
+    def __init__(self, topic: str, participants: List[ParticipantConfig], moderator: ParticipantConfig, max_turns: int = 10, llm_wait_time: int = 1, show_prompt: bool = False, log_level: str = "none", show_summary: bool = True):
         self.topic = topic
         self.participants = participants
         self.moderator = moderator
         self.max_turns = max_turns
         self.llm_wait_time = llm_wait_time
         self.show_prompt = show_prompt
+        self.log_level = log_level
+        self.show_summary = show_summary
         self.db_path = DB_PATH
 
 
@@ -120,6 +122,8 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     participants_data = config_data["participants"]
     max_turns = config_data.get("max_turns", 10) # デフォルト値は10
     show_prompt = config_data.get("show_prompt", False) # デフォルト値はFalse
+    log_level = config_data.get("log_level", "none") # デフォルト値は"none"
+    show_summary = config_data.get("show_summary", False) # デフォルト値はFalse
 
     participants = [
         ParticipantConfig(p["name"], p["model"], p["persona"])
@@ -137,7 +141,7 @@ def load_config_from_file(config_path: str = CONFIG_FILE_PATH) -> AppConfig:
     # llm_wait_time の設定を読み込む (デフォルト値は1秒)
     llm_wait_time = config_data.get("llm_wait_time", 1)
 
-    return AppConfig(topic, participants, moderator, max_turns, llm_wait_time, show_prompt)
+    return AppConfig(topic, participants, moderator, max_turns, llm_wait_time, show_prompt, log_level, show_summary)
 
 
 def parse_arguments() -> argparse.Namespace:
@@ -159,6 +163,17 @@ def parse_arguments() -> argparse.Namespace:
         action="store_true",
         help="プロンプトをコンソールに出力する"
     )
+    parser.add_argument(
+        "--log",
+        choices=["none", "info", "debug"],
+        default="none",
+        help="ログレベル (デフォルト: none)"
+    )
+    parser.add_argument(
+        "--show-summary",
+        action="store_true",
+        help="会話の要約をコンソールに出力する"
+    )
     # 今後、データベースパスなどのオプションを追加できます
     return parser.parse_args()
 
@@ -174,5 +189,11 @@ def get_app_config() -> AppConfig:
     # コマンドライン引数でshow_promptが指定されていれば上書き
     if args.show_prompt:
         config.show_prompt = args.show_prompt
+    # コマンドライン引数でlog_levelが指定されていれば上書き
+    if args.log:
+        config.log_level = args.log
+    # コマンドライン引数で--show-summaryが指定されていればshow_summaryをTrueに設定
+    if args.show_summary:
+        config.show_summary = True
 
     return config

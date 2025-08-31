@@ -1,0 +1,21 @@
+{
+  "theme": "Dracula",
+  "mcpServers": {
+    "github.com/upstash/context7-mcp": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "@upstash/context7-mcp@latest"],
+      "disabled": false,
+      "autoApprove": []
+    },
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from", "git+https://github.com/oraios/serena",
+        "serena-mcp-server",
+        "--context", "ide-assistant",
+        "--enable-web-dashboard", "false",
+        "--project", "$(pwd)" 
+        ]
+    }
+  }
+}

@@ -22,5 +22,8 @@ def setup_logger(name: str, level: str = "INFO") -> logging.Logger:
         '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     ))
     logger.addHandler(handler)
-    logger.setLevel(getattr(logging, level.upper()))
+    if level.upper() == "NONE":
+        logger.setLevel(logging.CRITICAL + 1)
+    else:
+        logger.setLevel(getattr(logging, level.upper()))
     return logger

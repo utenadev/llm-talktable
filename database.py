@@ -1,8 +1,12 @@
 import sqlite3
 import os
+import logging
 from contextlib import contextmanager
 from typing import Generator, List, Tuple
 from config import DB_PATH
+
+# ロガーを取得
+logger = logging.getLogger(__name__)
 
 # 会話ログテーブル作成SQL
 CREATE_CONVERSATION_LOG_TABLE_SQL = """
