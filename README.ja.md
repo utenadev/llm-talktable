@@ -120,10 +120,10 @@ python main.py --topic "宇宙旅行の未来"
 # 異なる設定ファイルを使用
 python main.py --config my_other_config.yaml
 
-# プロンプトをコンソールに出力 (デフォルトは false)
+# プロンプトをコンソールに出力 (--show-prompt, デフォルトは false)
 python main.py --show-prompt
 
-# 会話終了後にサマリーをコンソールに出力 (デフォルトは false)
+# 会話終了後にサマリーをコンソールに出力 (--show-summary, デフォルトは false)
 # 会話毎のサマリは作らず、会話終了後に内容を集約します。
 python main.py --show-summary
 ```
