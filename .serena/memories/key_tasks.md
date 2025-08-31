@@ -68,5 +68,15 @@
 - **MC Model Change and Test Execution (2025-08-30)**:
     - Changed the LLM model used by the Moderator (MC) from `openrouter/z-ai/glm-4.5-air:free` to `gemini/gemini-2.5-flash` due to an API error (400: Operation not allowed) encountered with the former model.
     - After the change, the application test execution completed successfully, and the conversation summary feature was confirmed to be working correctly.
+- **Logging and Prompt/Summary Options Enhanced (2025-08-31)**:
+    - Implemented flexible logging controls via the `--log` CLI option (`none`, `info`, `debug`) to manage console and file output verbosity.
+    - Added `--show-prompt` and `--show-summary` CLI options to toggle the display of LLM prompts and the final conversation summary in the console, respectively.
+    - Refactored the main application (`main.py`) logger setup to correctly handle the `--log none` level, suppressing console output while allowing file logging when enabled.
+    - Modified the conversation manager (`conversation.py`) to accept and utilize the `show_prompt` and `show_summary` flags for conditional output.
+    - Verified the correct behavior of all new logging and display options through manual testing.
+- **README Specification Clarification (2025-08-31)**:
+    - Updated `README.md` and `README.ja.md` to clearly specify the default behavior of `--show-prompt` (default: `false`) and `--show-summary` (default: `false`) command-line options.
+    - Clarified that when run without options, the application only records the conversation content without displaying prompts or summaries.
+    - Verified that the application starts correctly and displays the help message.
 - **Next Steps**:
     - Proceed with remaining tasks in my/3task.md: conversation summary/evaluation (task 4), turn control enhancements (task 5), testing implementation (task 6), and code review items (task 8). 
