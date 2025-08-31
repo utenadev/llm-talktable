@@ -32,6 +32,8 @@ CREATE TABLE IF NOT EXISTS conversation_meta (
     participant_a_model TEXT NOT NULL,
     participant_b_name TEXT NOT NULL,
     participant_b_model TEXT NOT NULL,
+    moderator_name TEXT NOT NULL,
+    moderator_model TEXT NOT NULL,
     start_time DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 """
@@ -93,6 +95,8 @@ def log_conversation_meta(
     participant_a_model: str,
     participant_b_name: str,
     participant_b_model: str,
+    moderator_name: str,
+    moderator_model: str,
     db_path: str = DB_PATH,
 ):
     """会話セッションのメタデータをデータベースに記録する"""
@@ -102,8 +106,8 @@ def log_conversation_meta(
             """
             INSERT OR REPLACE INTO conversation_meta
             (conversation_id, topic, participant_a_name, participant_a_model,
-             participant_b_name, participant_b_model)
-            VALUES (?, ?, ?, ?, ?, ?)
+             participant_b_name, participant_b_model, moderator_name, moderator_model)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 conversation_id,
@@ -112,6 +116,8 @@ def log_conversation_meta(
                 participant_a_model,
                 participant_b_name,
                 participant_b_model,
+                moderator_name,
+                moderator_model,
             ),
         )
 

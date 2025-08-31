@@ -226,6 +226,8 @@ class ConversationManager:
             participant_a_model=participant_a.model,
             participant_b_name=participant_b.name,
             participant_b_model=participant_b.model,
+            moderator_name=moderator.name,
+            moderator_model=moderator.model,
         )
 
         # 初期プロンプト: テーマを提示

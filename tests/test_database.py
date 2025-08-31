@@ -47,7 +47,7 @@ class TestDatabase(unittest.TestCase):
             cursor.execute("PRAGMA table_info(conversation_meta)")
             columns = cursor.fetchall()
             column_names = [column[1] for column in columns]
-            expected_columns = ['conversation_id', 'topic', 'participant_a_name', 'participant_a_model', 'participant_b_name', 'participant_b_model', 'start_time']
+            expected_columns = ['conversation_id', 'topic', 'participant_a_name', 'participant_a_model', 'participant_b_name', 'participant_b_model', 'moderator_name', 'moderator_model', 'start_time']
             for col in expected_columns:
                 self.assertIn(col, column_names)
 
@@ -102,6 +102,8 @@ class TestDatabase(unittest.TestCase):
         participant_a_model = "test-model-a"
         participant_b_name = "Bob"
         participant_b_model = "test-model-b"
+        moderator_name = "MC"
+        moderator_model = "test-model-mc"
         
         # ログを記録
         log_conversation_meta(
@@ -111,6 +113,8 @@ class TestDatabase(unittest.TestCase):
             participant_a_model=participant_a_model,
             participant_b_name=participant_b_name,
             participant_b_model=participant_b_model,
+            moderator_name=moderator_name,
+            moderator_model=moderator_model,
             db_path=self.db_path
         )
         
@@ -127,6 +131,8 @@ class TestDatabase(unittest.TestCase):
             self.assertEqual(row[3], participant_a_model)     # participant_a_model
             self.assertEqual(row[4], participant_b_name)      # participant_b_name
             self.assertEqual(row[5], participant_b_model)     # participant_b_model
+            self.assertEqual(row[6], moderator_name)          # moderator_name
+            self.assertEqual(row[7], moderator_model)         # moderator_model
 
 if __name__ == '__main__':
     unittest.main()
