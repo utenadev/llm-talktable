@@ -17,6 +17,13 @@ from yaspin import yaspin
 from yaspin.spinners import Spinners
 
 # llm-gemini プラグインがロードされるように、llm モジュールをリロードする
+# これは、llmライブラリが動的にプラグインをロードする際の潜在的な問題を回避するための措置です。
+# 特定の実行環境や起動方法によっては、`llm.load_plugins()` を呼び出すだけでは
+# `llm-gemini` のような外部プラグインが正しく認識されない場合があります。
+# `importlib.reload(llm)` を実行することで、llmモジュール全体が再評価され、
+# プラグイン検索パスがリフレッシュされることで、プラグインが確実にロードされるようになります。
+# より堅牢な解決策としては、プラグインがロードされない根本原因を調査することが望ましいですが、
+# 現状ではこのリロードが安定した動作を保証するための最も直接的な方法です。
 importlib.reload(llm)
 llm.load_plugins()
 
@@ -182,6 +189,36 @@ class ConversationManager:
 
         return response_text
 
+    def _handle_interrupt(self) -> bool:
+        """
+        ターンの実行中に `KeyboardInterrupt` が発生した際のユーザーインタラクションを処理する。
+
+        ユーザーに会話を停止するか、現在のターンを再試行して継続するかを問い合わせる。
+
+        Returns:
+            bool: 会話を終了する場合は `True`、継続する場合は `False` を返す。
+
+        Raises:
+            KeyboardInterrupt: ユーザーが入力プロンプトで再度 `Ctrl+C` を押した場合、
+                               例外を再送出してプログラムの終了を許可する。
+        """
+        print("\n\n--- 会話が中断されました ---")
+        while True:
+            try:
+                choice = input("会話を終了しますか？ (S[top] で終了, C[ontinue] で継続): ").strip().upper()
+                if choice in ["S", "STOP"]:
+                    print("会話を終了します。")
+                    return True  # 会話を終了
+                elif choice in ["C", "CONTINUE"]:
+                    print("会話を継続します。")
+                    return False  # 会話を継続
+                else:
+                    print("無効な入力です。'S' または 'C' を入力してください。")
+            except (EOFError, KeyboardInterrupt):
+                # 入力待機中に再度中断された場合、プログラムを終了させる
+                print("\n再度中断されました。プログラムを終了します。")
+                raise # KeyboardInterruptをさらに上位に伝播 (main.pyで処理される)
+
     def start_conversation(self, max_turns: int = 10, show_prompt: bool = False, show_summary: bool = False): # 引数を追加
         """会話を開始する"""
         if len(self.config.participants) < 2:
@@ -226,9 +263,10 @@ class ConversationManager:
             self.turn_count = turn + 1
             self.logger.info(f"[ターン {self.turn_count}] 開始")
             
-            # --- インタラプト処理の追加 ---
-            conversation_continues = True
-            while conversation_continues:
+            # --- ターン実行とインタラプト処理 ---
+            response_text = "" # ループの外でレスポンス変数を初期化
+            turn_in_progress = True
+            while turn_in_progress:
                 try:
                     # 現在のスピーカーにプロンプトを送信
                     response_text = self._run_single_turn(
@@ -236,25 +274,15 @@ class ConversationManager:
                         prompt_text=current_prompt,
                         show_prompt=show_prompt,
                     )
-                    conversation_continues = False # 成功したらループを抜ける
+                    turn_in_progress = False # ターンが成功したらループを抜ける
 
                 except KeyboardInterrupt:
-                    print("\n\n--- 会話が中断されました ---")
-                    while True:
-                        try:
-                            choice = input("会話を終了しますか？ (S[top] で終了, C[ontinue] で継続): ").strip().upper()
-                            if choice in ["S", "STOP"]:
-                                print("会話を終了します。")
-                                return # メソッドを正常終了 (sys.exitは呼ばない)
-                            elif choice in ["C", "CONTINUE"]:
-                                print("会話を継続します。")
-                                break # 内側のループを抜けて、現在のターンを再試行
-                            else:
-                                print("無効な入力です。'S' または 'C' を入力してください。")
-                        except (EOFError, KeyboardInterrupt):
-                            # 入力時にもう一度Ctrl+Cされた場合、プログラムを終了
-                            print("\n再度中断されました。プログラムを終了します。")
-                            raise # KeyboardInterruptをさらに上位に伝播 (main.pyでsys.exit(0)される)
+                    # 中断処理を専用メソッドに委譲
+                    if self._handle_interrupt():
+                        # Trueが返された場合 (ユーザーが 'S' を選択)、会話を終了
+                        return # start_conversation メソッドを終了
+                    # Falseが返された場合 (ユーザーが 'C' を選択)、
+                    # ループが継続し、現在のターンが再試行される
             
             # 次のターンの準備: レスポンスを次のプロンプトにする
             current_prompt = response_text
