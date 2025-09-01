@@ -1,6 +1,6 @@
 import argparse
 import os
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 
 # Use yaml_include for !include tag support
