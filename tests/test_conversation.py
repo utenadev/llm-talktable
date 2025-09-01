@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
+import logging
 from config import AppConfig, ParticipantConfig
 from conversation import ConversationManager
 
@@ -8,6 +9,10 @@ class TestConversationManager(unittest.TestCase):
 
     def setUp(self):
         """テスト前処理"""
+        # テスト用のロガーを作成 (出力を無効化)
+        self.logger = logging.getLogger(__name__)
+        self.logger.setLevel(logging.CRITICAL + 1)
+
         # テスト用のAppConfigを作成
         self.participants = [
             ParticipantConfig("Alice", "test-model-a", "Alice's persona"),
@@ -31,7 +36,7 @@ class TestConversationManager(unittest.TestCase):
         mock_get_model.return_value = mock_model
         
         # ConversationManagerのインスタンスを作成
-        cm = ConversationManager(self.config)
+        cm = ConversationManager(self.config, self.logger)
         
         # テスト
         model = cm._get_llm_model(self.participants[0])
@@ -47,7 +52,7 @@ class TestConversationManager(unittest.TestCase):
         mock_get_model.side_effect = Exception("Model not found")
         
         # ConversationManagerのインスタンスを作成
-        cm = ConversationManager(self.config)
+        cm = ConversationManager(self.config, self.logger)
         
         # テストと検証
         with self.assertRaises(ValueError) as context:
@@ -69,7 +74,7 @@ class TestConversationManager(unittest.TestCase):
         mock_get_model.return_value = mock_model
         
         # ConversationManagerのインスタンスを作成
-        cm = ConversationManager(self.config)
+        cm = ConversationManager(self.config, self.logger)
         cm.conversation_id = "test-conversation-id"
         cm.turn_count = 1
         

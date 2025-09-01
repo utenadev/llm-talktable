@@ -166,8 +166,8 @@ def parse_arguments() -> argparse.Namespace:
     parser.add_argument(
         "--log",
         choices=["none", "info", "debug"],
-        default="none",
-        help="ログレベル (デフォルト: none)"
+        default=None, # デフォルトはNoneに変更
+        help="ログレベル (デフォルト: config.yamlの設定に従う)"
     )
     parser.add_argument(
         "--show-summary",
@@ -189,8 +189,8 @@ def get_app_config() -> AppConfig:
     # コマンドライン引数でshow_promptが指定されていれば上書き
     if args.show_prompt:
         config.show_prompt = args.show_prompt
-    # コマンドライン引数でlog_levelが指定されていれば上書き
-    if args.log:
+    # コマンドライン引数でlog_levelが指定されていれば上書き (引数が指定された場合のみ)
+    if args.log is not None:
         config.log_level = args.log
     # コマンドライン引数で--show-summaryが指定されていればshow_summaryをTrueに設定
     if args.show_summary:
